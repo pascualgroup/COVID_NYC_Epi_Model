@@ -1,0 +1,435 @@
+---
+title: "Simulation Exploration"
+author: "Rahul Subramanian"
+date: "10/29/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+#Load Libraries
+
+```{r load_lib}
+rm(list = ls())
+library(plyr)
+library(tidyverse)
+library(magrittr)
+library(tibble)
+library(stringi)
+library(pomp)
+library(xtable)
+#library(panelPomp)
+#library(foreach)
+#library(iterators)
+#library(doRNG)
+#library(aakmisc) ## available at https://kingaa.github.io/
+stopifnot(packageVersion("pomp")>="2.2")
+#stopifnot(packageVersion("panelPomp")>="0.9.1")
+#stopifnot(packageVersion("aakmisc")>="0.26.2")
+options(
+  stringsAsFactors=FALSE,
+  keep.source=TRUE,
+  encoding="UTF-8"
+)
+set.seed(407958184)
+```
+
+### Load essential libraries and plot themes
+```{r}
+source("load_libraries_essential.R")
+source("rahul_theme.R")
+library(zoo)
+library(stringr)
+```
+
+
+We fit a modified SEIR model to case data from the 2019-nCoV epidemic in NYC using case data from () to ().
+
+## Declare model name
+```{r}
+full_model_name = "NYC_Covid_Model_Hyrbid_Model_1_Pre-Symp_Compartment_Set_b_p_to_0"
+model_name = "N_12"
+rda_index = 0
+rds_index = 0
+
+```
+
+## Compartment/Queue Cohort Numbers
+```{r}
+M = 5
+V = 13
+K = 14
+```
+
+
+```{r, echo = FALSE, include=FALSE}
+source("Csnippet_nyc_coronavirus_model_N_12.R")
+```
+
+
+
+### Load obs and covar data
+```{r}
+#Load Observed NYC case data
+Observed_data = read.csv(paste0(
+  "../Generated_Data/observed_data_",
+  model_name, ".csv"))
+head(Observed_data)
+```
+
+```{r}
+### Define start date
+true_start_date = as.Date("2020-03-01")
+t0 = 0
+start_of_year = as.Date("2020-01-01")
+first_saturday_in_year = as.Date("2020-01-04")
+
+## Compartment/Queue Cohort Numbers
+M = 5
+V = 13
+K = 14
+
+
+#Declare Csnippets and data
+source("Csnippet_nyc_coronavirus_model_N_12.R")
+
+## Load NYC covariate data
+covariate_df = read.csv(file =
+                          paste0("../Generated_Data/covariate_data_",
+                                 model_name, ".csv"))
+
+
+
+### Create covariate table
+covar=covariate_table(
+  time=covariate_df$times,
+  L_advanced_2_days=covariate_df$L_advanced_2_days,
+  F_w_y = covariate_df$F_w_y,
+  L_orig = covariate_df$L_orig,
+  w = covariate_df$Week,
+  y = covariate_df$Year,
+  times="time"
+)
+```
+
+# Simulate from big b_a param combination
+```{r}
+big_b_a_MLE = read.csv("../Generated_Data/Profiles/N_12_Model/top_2_LL_data/Man_Table_data/b_a_profile_top_2_LL_via_case_and_antibody_LL_big_b_a_parameter_combination_for_simulation.csv")
+big_b_a_MLE
+big_b_a_MLE_comb =   big_b_a_MLE %>%
+  dplyr::select(-msg, -iter_num, -param_index,
+                -loglik, -nfail, -trace_num, -loglist.se,
+                -Antibody_Mean_LL, -Antibody_LL_SE,
+                -Median_Herd_Immunity, -combo_num,
+                -sim_subset_index, -duration_of_symp_1,
+                -duration_of_symp_2, -duration_of_symp,
+                -gamma_total, -Beta,
+                -R_0_P, -R_0_A, -R_0_S_1, -R_0_S_2,
+                -R_0_NGM)
+
+```
+
+
+```{r}
+##Simulation from ML
+sim_data_big_b_a = simulate(nsim = 101,
+                    seed = 12345,
+                    times = Observed_data$times,
+                    t0 = t0,
+                    rprocess = pomp::euler(rproc,delta.t = 1),
+                    params = big_b_a_MLE_comb,
+                    paramnames = paramnames,
+                    statenames = statenames,
+                    obsnames = obsnames,
+                    accumvars = acumvarnames,
+                    rinit = init,
+                    rmeas = rmeas,
+                    partrans = par_trans,
+                    covar = covar,
+                    format = "data.frame")
+#head(sim_data)
+
+sim_data_big_b_a_traj_data = sim_data_big_b_a %>%
+  dplyr::select(time, .id, Y) 
+
+p = ggplot(data = sim_data_big_b_a_traj_data,
+           aes(x = time,
+               y = Y,
+               color = .id)) +
+  geom_point() + geom_line(aes(group = .id)) +
+  geom_point(data = Observed_data,
+                              aes(x = times, y = Y), color = 'red') +
+  geom_line(data = Observed_data,
+                              aes(x = times, y = Y), color = 'red') +
+  rahul_man_figure_theme +
+  theme(legend.position = "None")
+p
+png("../Figures/Representative_Simulations/big_b_a_all_traj_sim.png")
+print(p)
+dev.off()
+
+```
+### Plot 6 individual trajectories from big b_a parameter combination
+```{r}
+select_trajectories  = filter(sim_data_big_b_a, .id %in% seq(from = 5, to = 10))
+select_trajectories = dplyr::select(select_trajectories, time, .id, Y)
+select_trajectories$type = "Sim"
+
+library(RColorBrewer)
+full_blue_pallete = brewer.pal(9, "Blues")
+sim_traj_pallete = full_blue_pallete[9:4]
+sim_traj_scale = scale_color_manual(name = "Legend", values = c( sim_traj_pallete), labels =  c("Sim_Traj_1", "Sim_Traj_2", "Sim_Traj_3", "Sim_Traj_4", "Sim_Traj_5", "Sim_Traj_6")) 
+p = ggplot(data = select_trajectories,
+           aes(x = time, y = Y, color = .id)) + geom_point(size = 2) + geom_line(aes(group = .id)) + rahul_theme + rahul_man_figure_theme + theme_white_background +
+  sim_traj_scale
+p
+png("../Figures/Representative_Simulations/big_b_a_5_traj_sim.png")
+print(p)
+dev.off()
+
+p = ggplot(data = select_trajectories,
+           aes(x = time, y = Y, color = .id)) + geom_point(size = 2) + geom_line(aes(group = .id)) + rahul_theme +
+  rahul_man_figure_theme + theme_white_background +
+  sim_traj_scale + geom_point(data = Observed_data,
+                              aes(x = times, y = Y), color = 'red') +
+  geom_line(data = Observed_data,
+                              aes(x = times, y = Y), color = 'red')
+p
+png("../Figures/Representative_Simulations/big_b_a_5_traj_sim_with_obs.png")
+print(p)
+dev.off()
+
+p = ggplot(data = select_trajectories,
+           aes(x = time, y = Y, color = .id)) + geom_point(size = 2) + geom_line(aes(group = .id))  +
+  theme_white_background +
+  sim_traj_scale +
+    facet_wrap(~.id, ncol = 1) +
+  geom_point(data = Observed_data,
+                              aes(x = times, y = Y), color = 'red') +
+  geom_line(data = Observed_data,
+                              aes(x = times, y = Y), color = 'red') +
+  theme(legend.position = "None") +
+  theme(strip.background = element_blank(),
+        strip.text.x = element_blank())
+p
+png("../Figures/Representative_Simulations/big_b_a_5_traj_sim_with_obs_facet.png")
+print(p)
+dev.off()
+
+
+p = ggplot(data = select_trajectories,
+           aes(x = time, y = Y, color = .id)) + geom_point(size = 2) + geom_line(aes(group = .id))  +
+  theme_white_background +
+  sim_traj_scale +
+    facet_wrap(~.id, ncol = 1) +
+  geom_point(data = Observed_data,
+                              aes(x = times, y = Y), color = 'red') +
+  geom_line(data = Observed_data,
+                              aes(x = times, y = Y), color = 'red') +
+  theme(legend.position = "None") 
+p
+
+```
+
+### Pick "good" simluation
+(One that corresponds well with the data by eye)
+```{r}
+big_b_a_single_traj = select_trajectories %>%
+  filter(.id == "10")
+p = ggplot(data = big_b_a_single_traj,
+           aes(x = time, y = Y)) + geom_point(size = 2,
+                                              color = 'blue') +
+  geom_line(color = 'blue') + rahul_man_figure_theme +
+  geom_point(data = Observed_data,
+                              aes(x = times, y = Y), color = 'red') +
+  geom_line(data = Observed_data,
+                              aes(x = times, y = Y), color = 'red')
+p
+png("../Figures/Representative_Simulations/big_b_a_best_traj_vs_obs.png")
+print(p)
+dev.off()
+
+```
+
+### Save single trajectory for high b_a parameter combination
+```{r}
+
+NYC_full_testing_data =
+  read.csv("../Generated_Data/NYC_full_testing_data.csv")
+head(NYC_full_testing_data)
+nyc_rel_testing_data = NYC_full_testing_data %>%
+  mutate(times = as.numeric(as.Date(Date) - true_start_date)) %>%
+  select(times,
+         Total_Number_of_Tests_Performed =
+           Total_Number_of_Tests_Performed)
+
+big_b_a_single_traj_data = big_b_a_single_traj %>%
+  dplyr::select(Y =Y, times = time) %>%
+  join(nyc_rel_testing_data) %>%
+  mutate(obs_prop_positive = Y/Total_Number_of_Tests_Performed) %>%
+  dplyr::select(-Total_Number_of_Tests_Performed)
+big_b_a_single_traj_data$obs_prop_positive[1] = NA
+big_b_a_single_traj_data
+write.csv(big_b_a_single_traj_data,
+          "../Generated_Data/Representative_Simulations/big_b_a_single_sim_traj_data.csv",
+          row.names = FALSE)
+```
+
+
+# Simulate from small b_a param combination
+
+### Load small b_a parameter combination
+```{r}
+small_b_a_MLE = read.csv("../Generated_Data/Profiles/N_12_Model/top_2_LL_data/Man_Table_data/b_a_profile_top_2_LL_via_case_and_antibody_LL_small_b_a_parameter_combination_for_simulation.csv")
+small_b_a_MLE
+small_b_a_MLE_comb =   small_b_a_MLE %>%
+  dplyr::select(-msg, -iter_num, -param_index,
+                -loglik, -nfail, -trace_num, -loglist.se,
+                -Antibody_Mean_LL, -Antibody_LL_SE,
+                -Median_Herd_Immunity, -combo_num,
+                -sim_subset_index, -duration_of_symp_1,
+                -duration_of_symp_2, -duration_of_symp,
+                -gamma_total, -Beta,
+                -R_0_P, -R_0_A, -R_0_S_1, -R_0_S_2,
+                -R_0_NGM)
+```
+
+### Simulate from small b_a parameter combination
+```{r}
+##Simulation from ML
+sim_data_small_b_a = simulate(nsim = 101,
+                    seed = 12345,
+                    times = Observed_data$times,
+                    t0 = t0,
+                    rprocess = pomp::euler(rproc,delta.t = 1),
+                    params = small_b_a_MLE_comb,
+                    paramnames = paramnames,
+                    statenames = statenames,
+                    obsnames = obsnames,
+                    accumvars = acumvarnames,
+                    rinit = init,
+                    rmeas = rmeas,
+                    partrans = par_trans,
+                    covar = covar,
+                    format = "data.frame")
+
+sim_data_small_b_a_traj_data = sim_data_small_b_a %>%
+  dplyr::select(time, .id, Y) 
+
+p = ggplot(data = sim_data_small_b_a_traj_data,
+           aes(x = time,
+               y = Y,
+               color = .id)) +
+  geom_point() + geom_line(aes(group = .id)) +
+  geom_point(data = Observed_data,
+                              aes(x = times, y = Y), color = 'red') +
+  geom_line(data = Observed_data,
+                              aes(x = times, y = Y), color = 'red') +
+  rahul_man_figure_theme +
+  theme(legend.position = "None")
+p
+png("../Figures/Representative_Simulations/small_b_a_all_traj_sim.png")
+print(p)
+dev.off()
+
+
+```
+
+### Plot 6 individual trajectories from small b_a parameter combination
+```{r}
+select_trajectories  = filter(sim_data_small_b_a_traj_data, .id %in% seq(from = 5, to = 10))
+select_trajectories = dplyr::select(select_trajectories, time, .id, Y)
+select_trajectories$type = "Sim"
+
+library(RColorBrewer)
+full_blue_pallete = brewer.pal(9, "Blues")
+sim_traj_pallete = full_blue_pallete[9:4]
+sim_traj_scale = scale_color_manual(name = "Legend", values = c( sim_traj_pallete), labels =  c("Sim_Traj_1", "Sim_Traj_2", "Sim_Traj_3", "Sim_Traj_4", "Sim_Traj_5", "Sim_Traj_6")) 
+p = ggplot(data = select_trajectories,
+           aes(x = time, y = Y, color = .id)) + geom_point(size = 2) + geom_line(aes(group = .id)) + rahul_theme + rahul_man_figure_theme + theme_white_background +
+  sim_traj_scale
+p
+png("../Figures/Representative_Simulations/small_b_a_5_traj_sim.png")
+print(p)
+dev.off()
+
+p = ggplot(data = select_trajectories,
+           aes(x = time, y = Y, color = .id)) + geom_point(size = 2) + geom_line(aes(group = .id)) + rahul_theme +
+  rahul_man_figure_theme + theme_white_background +
+  sim_traj_scale + geom_point(data = Observed_data,
+                              aes(x = times, y = Y), color = 'red') +
+  geom_line(data = Observed_data,
+                              aes(x = times, y = Y), color = 'red')
+p
+png("../Figures/Representative_Simulations/small_b_a_5_traj_sim_with_obs.png")
+print(p)
+dev.off()
+
+p = ggplot(data = select_trajectories,
+           aes(x = time, y = Y, color = .id)) + geom_point(size = 2) + geom_line(aes(group = .id))  +
+  theme_white_background +
+  sim_traj_scale +
+    facet_wrap(~.id, ncol = 1) +
+  geom_point(data = Observed_data,
+                              aes(x = times, y = Y), color = 'red') +
+  geom_line(data = Observed_data,
+                              aes(x = times, y = Y), color = 'red') +
+  theme(legend.position = "None") +
+  theme(strip.background = element_blank(),
+        strip.text.x = element_blank())
+p
+png("../Figures/Representative_Simulations/small_b_a_5_traj_sim_with_obs_facet.png")
+print(p)
+dev.off()
+
+
+p = ggplot(data = select_trajectories,
+           aes(x = time, y = Y, color = .id)) + geom_point(size = 2) + geom_line(aes(group = .id))  +
+  theme_white_background +
+  sim_traj_scale +
+    facet_wrap(~.id, ncol = 1) +
+  geom_point(data = Observed_data,
+                              aes(x = times, y = Y), color = 'red') +
+  geom_line(data = Observed_data,
+                              aes(x = times, y = Y), color = 'red') +
+  theme(legend.position = "None") 
+p
+
+```
+
+### Pick "good" simluation
+(One that corresponds well with the data by eye)
+```{r}
+small_b_a_single_traj = select_trajectories %>%
+  filter(.id == "5")
+p = ggplot(data = small_b_a_single_traj,
+           aes(x = time, y = Y)) + geom_point(size = 2,
+                                              color = 'blue') +
+  geom_line(color = 'blue') + rahul_man_figure_theme +
+  geom_point(data = Observed_data,
+                              aes(x = times, y = Y), color = 'red') +
+  geom_line(data = Observed_data,
+                              aes(x = times, y = Y), color = 'red')
+p
+png("../Figures/Representative_Simulations/small_b_a_best_traj_vs_obs.png")
+print(p)
+dev.off()
+
+```
+
+### Save single trajectory for high b_a parameter combination
+```{r}
+small_b_a_single_traj_data = small_b_a_single_traj %>%
+  dplyr::select(Y =Y, times = time) %>%
+  join(nyc_rel_testing_data) %>%
+  mutate(obs_prop_positive = Y/Total_Number_of_Tests_Performed) %>%
+  dplyr::select(-Total_Number_of_Tests_Performed)
+small_b_a_single_traj_data$obs_prop_positive[1] = NA
+small_b_a_single_traj_data
+write.csv(small_b_a_single_traj_data,
+          "../Generated_Data/Representative_Simulations/small_b_a_single_sim_traj_data.csv",
+          row.names = FALSE)
+```
