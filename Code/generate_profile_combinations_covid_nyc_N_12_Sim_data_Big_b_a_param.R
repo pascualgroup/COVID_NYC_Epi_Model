@@ -31,7 +31,7 @@ print(model_name)
 top_20_LL_box = read.csv(
   file = paste0("../Generated_Data/Profile_Combination_Lists/",
   model_name,
-  "_Model/Sim_Data_Big_b_a_param_orignal_20_LL_param_box_from_1st_MIF_run.csv"))
+  "_Model/Sim_Data_Big_b_a_param_original_20_LL_param_box_from_1st_MIF_run.csv"))
 
 #Modify G_w_y_scaling box boundaries
 par_box_boundaries = top_20_LL_box %>%
