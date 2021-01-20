@@ -1,5 +1,5 @@
 ---
-title: "SEIR Hyrbid Model with 1 Pre-Symptomatic Compartment: Pre-Symp and Asymp have same rate with Presymp occuring before Asymp/Symp split"
+title: "Implementaion of SEIAR and SEPIAR Model"
 author: "Rahul Subramanian"
 date: "April 12, 2020"
 output: 
@@ -5331,7 +5331,7 @@ write.csv(MLE,
 top_20_LL_box = top_20_LL_end_params %>%
   filter(loglist.se < 2) %>%
   sapply(range)
-write.csv(top_20_LL_box, file = "../Generated_Data/Profile_Combination_Lists/N_12_Model/orignal_20_LL_param_box_from_1st_MIF_run.csv",
+write.csv(top_20_LL_box, file = "../Generated_Data/Profile_Combination_Lists/N_12_Model/original_20_LL_param_box_from_1st_MIF_run.csv",
           row.names = FALSE)
 ```
 
