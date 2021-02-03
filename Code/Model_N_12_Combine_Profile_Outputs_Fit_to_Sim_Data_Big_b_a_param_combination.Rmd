@@ -1,0 +1,330 @@
+---
+title: "Combine Profile Outputs Fit to Sim Data Big b_a Parameter Combination"
+author: "Rahul Subramanian"
+date: "11/1/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r load_lib}
+rm(list = ls())
+library(plyr)
+library(tidyverse)
+library(magrittr)
+library(tibble)
+library(stringi)
+library(pomp)
+library(xtable)
+#library(panelPomp)
+#library(foreach)
+#library(iterators)
+#library(doRNG)
+#library(aakmisc) ## available at https://kingaa.github.io/
+stopifnot(packageVersion("pomp")>="2.2")
+#stopifnot(packageVersion("panelPomp")>="0.9.1")
+#stopifnot(packageVersion("aakmisc")>="0.26.2")
+options(
+  stringsAsFactors=FALSE,
+  keep.source=TRUE,
+  encoding="UTF-8"
+)
+set.seed(407958184)
+```
+
+### Load essential libraries and plot themes
+```{r}
+source("load_libraries_essential.R")
+source("rahul_theme.R")
+library(zoo)
+library(stringr)
+```
+
+
+
+## Declare model name
+```{r}
+full_model_name = "NYC_Covid_Model_Hyrbid_Model_1_Pre-Symp_Compartment_Set_b_p_to_0"
+model_name = "N_12"
+rda_index = 0
+rds_index = 0
+
+```
+
+### Combine output from profiles
+```{r}
+
+  # ---- combine_profile_output ----
+
+
+# Header ------------------------------------------------------------------
+## Name: combine_profile_output.R
+## Author: Rahul Subramanian
+## Description: Combine MIF real profile output data into one big data frame
+
+  combine_profile_output = function(profile_var, model_name){
+
+
+ptm = proc.time()
+
+
+#profile_var = "I_S_0"
+#args = commandArgs(trailingOnly=TRUE)
+
+#profile_var = as.character(args[1])
+print(profile_var)
+
+###Load parameter list
+pd = read.csv(file = paste0("../Generated_Data/Profile_Combination_Lists/",
+                            model_name,"_Model/",profile_var,"_",
+                            model_name,
+                        "_Sim_Data_Big_b_a_param_profile_combination_list.csv"),
+              header = TRUE)
+#head(pd)
+
+
+mif_sim_combined_output_df = data.frame(
+  matrix(nrow = 0, ncol = ncol(pd) + 7)
+)
+colnames(mif_sim_combined_output_df) = c(colnames(pd), "LL")
+
+colnames(mif_sim_combined_output_df) = c(colnames(pd),"msg", "iter_num", "param_index", "loglik", "nfail", "trace_num",  "loglist.se")
+midway_max_jobs = 500
+
+
+for(param_index in seq(1:midway_max_jobs)){
+		#print(param_index)
+
+  input_file_name = paste0("../Generated_Data/Profiles/", model_name,
+                           "_Model/",profile_var,"_Profile_Sim_Data_Big_b_a_param/Subset_Outputs/",profile_var,
+                           "_", model_name,
+               "_Profile_Sim_Data_Big_b_a_param_subset_",param_index,".RData")
+  if(file.exists(input_file_name) == TRUE){
+    load(file = input_file_name)
+    mif_output_df_single_subset = res
+  }else{
+    print("Missing file")
+    print(param_index)
+    group_size = nrow(pd)/midway_max_jobs
+    start_index = (param_index-1)*group_size + 1
+    end_index = param_index*group_size
+    Num_mif_runs_per_start = 1
+    param_data_subset_act = pd[start_index:end_index,]
+    param_data_subset = param_data_subset_act[rep(seq_len(nrow(param_data_subset_act)), each = Num_mif_runs_per_start),]
+    #param_data_subset$seed = NA;
+
+    param_data_subset$msg = NA
+    param_data_subset$iter_num = NA
+    param_data_subset$param_index = NA
+    param_data_subset$nfail = NA
+    param_data_subset$trace_num = NA
+    param_data_subset$loglik = NA
+    param_data_subset$loglist.se = NA
+    mif_output_df_single_subset = param_data_subset
+
+  }
+
+  #head(mif_output_df_single_subset)
+  mif_sim_combined_output_df = rbind(mif_sim_combined_output_df, mif_output_df_single_subset)
+}
+
+output_file_name = paste0("../Generated_Data/Profiles/", model_name,"_Model/", profile_var, "_Profile_Sim_Data_Big_b_a_param/",
+                          profile_var, "_", model_name, "_profile_Sim_Data_Big_b_a_param_combined_data_including_traces_and_start.RData")
+
+save(mif_sim_combined_output_df, file = output_file_name)
+
+profile_data_no_traces_or_start = filter(mif_sim_combined_output_df,
+                                         msg == "mif1")
+
+output_file_name = paste0("../Generated_Data/Profiles/", model_name,"_Model/", profile_var, "_Profile_Sim_Data_Big_b_a_param/",
+                          profile_var, "_", model_name, "_profile_Sim_Data_Big_b_a_param_combined_data.csv")
+write.csv(profile_data_no_traces_or_start, file = output_file_name, row.names=FALSE,na="")
+}
+
+#combine_profile_output(profile_var = "G_w_y_scaling", model_name = model_name)
+
+# combine_profile_output(profile_var = "z_0", model_name = model_name)
+# combine_profile_output(profile_var = "E_0", model_name = model_name)
+# combine_profile_output(profile_var = "R_0", model_name = model_name)
+combine_profile_output(profile_var = "b_a", model_name = model_name)
+# combine_profile_output(profile_var = "b_e", model_name = model_name)
+# combine_profile_output(profile_var = "b_q", model_name = model_name)
+# combine_profile_output(profile_var = "p_S", model_name = model_name)
+# combine_profile_output(profile_var = "p_H_cond_S", model_name = model_name)
+# combine_profile_output(profile_var = "gamma", model_name = model_name)
+# combine_profile_output(profile_var = "sigma_M", model_name = model_name)
+
+
+```
+
+
+# Plot profiles
+For each profile, three plots are generated. The first plot("all_clean_data_points") shows the likelihoods of every MIF run conducted for that profile. The second plot is the actual plot of the profile. For the second plot, only the maximum likelihood of each profiled parameter value is shown on the plot. The third plot is a "zoom-in" of the region near the MLE, only showing combinations within 20 log-likelihood units of the MLE. On all three plots, red horizontal lines denote likelihood values 20 log-likelihood units below the profile MLE, while blue horizontal lines denote likelihood values 2 log-likelihood units below the MLE.
+
+## Plotting function
+```{r}
+plot_profiles = function(profile_var, model_name){
+
+#Load results
+profile_data = read.csv(file = paste0("../Generated_Data/Profiles/", model_name, "_Model/", profile_var, "_Profile/",
+                          profile_var, "_", model_name, "_profile_combined_data.csv"))
+#head(profile_data)
+
+na_data = filter(profile_data, is.na(loglik) == TRUE)
+print(paste("There are ", nrow(na_data), " entries with NA likelihoods"))
+
+profile_data_clean = filter(profile_data, is.na(loglik) == FALSE)
+
+
+ML = max(profile_data_clean$loglik)
+cutoff_thres_20_LL_from_ML = ML - 20
+
+
+
+p = ggplot(data = profile_data_clean, aes_string(x = eval(profile_var), y = "loglik")) + geom_point() + geom_hline(yintercept = cutoff_thres_20_LL_from_ML,
+                                                                                                               color = 'red')+
+  rahul_theme
+print(p)
+png(paste0("../Figures/Profiles/", model_name, "_Model/", profile_var, "_Profile_Sim_Data_Big_b_a_param/all_clean_data_points_",
+           profile_var,"_", model_name, "_profile_Sim_Data_Big_b_a_param.png"))
+print(p)
+dev.off()
+
+cutoff_thres_2_LL_from_ML = ML - 2
+
+
+
+
+### Take trace of profile (max at each value of profile variable)
+profile_var_profile = aggregate(formula(paste0("loglik ~ ",eval(profile_var))), profile_data_clean, max)
+#head(profile_var_profile)
+p = ggplot(data = profile_var_profile, aes_string(x = eval(profile_var), y = "loglik")) +
+  geom_point(size = 3) + geom_hline(yintercept = cutoff_thres_20_LL_from_ML, color = 'red') + rahul_theme
+print(p)
+png(paste0("../Figures/Profiles/", model_name, "_Model/", profile_var, "_Profile_Sim_Data_Big_b_a_param/full_",
+           profile_var, "_", model_name, "_profile_Sim_Data_Big_b_a_param.png"))
+print(p)
+dev.off()
+
+
+top_20_LL_units = filter(profile_var_profile, loglik > cutoff_thres_20_LL_from_ML)
+
+p = ggplot(data = top_20_LL_units, aes_string(x = eval(profile_var), y = "loglik")) +
+  geom_point() + geom_hline(yintercept = cutoff_thres_2_LL_from_ML,color = 'blue') +
+  rahul_theme + theme_white_background +
+  ylab("Log Likelihood")
+
+
+if(profile_var == "G_w_y_scaling"){
+  p = p + xlab("s")
+}
+
+print(p)
+
+png(paste0("../Figures/Profiles/", model_name, "_Model/", profile_var, "_Profile_Sim_Data_Big_b_a_param/20_LL_from_ML_",
+           profile_var, "_", model_name, "_profile_Sim_Data_Big_b_a_param.png"))
+print(p)
+dev.off()
+}
+```
+
+## $b_a$ Profile
+
+```{r}
+plot_profiles(profile_var = "b_a", model_name = model_name)
+```
+
+```{r}
+profile_var = "b_a"
+profile_data= read.csv(file = paste0("../Generated_Data/Profiles/", model_name, "_Model/", profile_var, "_Profile_Sim_Data_Big_b_a_param/",
+                          profile_var, "_", model_name, "_profile_Sim_Data_Big_b_a_param_combined_data.csv"))
+profile_peak_data_b_a = profile_data %>%
+  filter(loglik > max(loglik)-2)
+range(profile_peak_data_b_a$R_0)
+save(profile_peak_data_b_a, file = paste0("../Generated_Data/Profiles/",
+     model_name,
+     "_Model/b_a_Profile_Sim_Data_Big_b_a_param/top_2_LL_of_b_a_profile_Sim_Data_Big_b_a_param.RData"))
+profile_peak_data = profile_data %>%
+  filter(loglik > max(loglik)-5)
+range(profile_peak_data$R_0)
+
+p = ggplot(data = profile_peak_data,
+           aes(x = G_w_y_scaling,
+               y = R_0)) + 
+  geom_point() +
+  rahul_theme 
+p
+p = ggplot(data = profile_peak_data,
+           aes(x = G_w_y_scaling,
+               y = p_S)) + 
+  geom_point() +
+  rahul_theme 
+p
+
+```
+
+```{r}
+p = ggplot(data = profile_peak_data,
+           aes(x = b_a,
+               y = b_p,
+               color = p_S < .15)) + 
+  geom_point() +
+  rahul_theme 
+p
+
+p = ggplot(data = profile_peak_data,
+           aes(x = b_a,
+               y = p_S)) + 
+  geom_point() +
+  rahul_theme
+p
+
+p = ggplot(data = profile_peak_data,
+           aes(x = R_0,
+               y = p_S)) + 
+  geom_point() +
+  rahul_theme
+p
+
+
+p = ggplot(data = profile_peak_data,
+           aes(x = p_S,
+               y = log(R_0))) + 
+  geom_point() + geom_hline(yintercept = log(3), color = 'orange') +
+    geom_hline(yintercept = log(4), color = 'purple') +
+  rahul_theme
+p
+range(profile_peak_data$p_S)
+
+png("../Figures/Profiles/N_12_Model/b_a_Profile_Sim_Data_Big_b_a_param/p_S_vs_log_R_0_b_a_Profile_Sim_Data_Big_b_a_param_data.png")
+print(p)
+dev.off()
+
+p = ggplot(data = profile_peak_data,
+           aes(x = b_a,
+               y = log(R_0))) + 
+  geom_point() + geom_hline(yintercept = log(3), color = 'orange') +
+  geom_hline(yintercept = log(4), color = 'purple') +
+  rahul_theme
+p
+png("../Figures/Profiles/N_12_Model/b_a_Profile_Sim_Data_Big_b_a_param/b_a_vs_log_R_0_b_a_Profile_Sim_Data_Big_b_a_param_data.png")
+print(p)
+dev.off()
+
+small_R_0_profile_peak_params = profile_peak_data %>%
+  filter(R_0 <= 3)
+range(small_R_0_profile_peak_params$p_S)
+
+```
+
+## Calculate Antibody LL for Profile Peaks
+
+### b_a profile peak
+```{r}
+source("Sim_b_a_profile_peak_Model_N_12_Sim_data_big_b_a_param.R")
+```
+

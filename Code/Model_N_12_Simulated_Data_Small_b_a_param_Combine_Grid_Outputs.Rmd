@@ -1,0 +1,345 @@
+---
+title: "Combine Simulated Data for small b_a parameter combination"
+author: "Rahul Subramanian"
+date: "10/30/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r load_lib}
+rm(list = ls())
+library(plyr)
+library(tidyverse)
+library(magrittr)
+library(tibble)
+library(stringi)
+library(pomp)
+library(xtable)
+#library(panelPomp)
+#library(foreach)
+#library(iterators)
+#library(doRNG)
+#library(aakmisc) ## available at https://kingaa.github.io/
+stopifnot(packageVersion("pomp")>="2.2")
+#stopifnot(packageVersion("panelPomp")>="0.9.1")
+#stopifnot(packageVersion("aakmisc")>="0.26.2")
+options(
+  stringsAsFactors=FALSE,
+  keep.source=TRUE,
+  encoding="UTF-8"
+)
+set.seed(407958184)
+```
+
+### Load essential libraries and plot themes
+```{r}
+source("load_libraries_essential.R")
+source("rahul_theme.R")
+library(zoo)
+library(stringr)
+```
+
+
+
+## Declare model name
+```{r}
+full_model_name = "NYC_Covid_Model_Hyrbid_Model_1_Pre-Symp_Compartment_Set_b_p_to_0"
+model_name = "N_12"
+rda_index = 0
+rds_index = 0
+
+```
+
+
+
+## Combine Midway output susbsets
+Once all of the 250 array jobs submitted to Midway f have finished running on the cluster, the output from each of those 250 jobs is combined into one data frame  with combinations and likelihoods for a particular profile. For ease of computation, we only include the top 100LL of parameter combinations within each array job.
+
+### Code for combining
+```{r}
+
+  # ---- combine_grid_search_output ----
+
+
+# Header ------------------------------------------------------------------
+## Name: combine_grid_search_output
+## Author: Rahul Subramanian
+## Description: Combine MIF real grid search output data into one big data frame
+
+  combine_grid_search_output = function(model_name){
+
+
+ptm = proc.time()
+
+
+#args = commandArgs(trailingOnly=TRUE)
+
+
+
+###Load parameter list
+pd = read.csv(
+  file = paste0(
+    "../Generated_Data/Profile_Combination_Lists/",
+    model_name,
+    "_Model/",
+    model_name,
+    "_param_grid.csv"
+  ),
+  header = TRUE
+)
+
+
+mif_sim_combined_output_df = data.frame(
+  matrix(nrow = 0, ncol = ncol(pd) + 7)
+)
+colnames(mif_sim_combined_output_df) = c(colnames(pd), "LL")
+
+colnames(mif_sim_combined_output_df) = c(colnames(pd),"msg", "iter_num", "param_index", "loglik", "nfail", "trace_num",  "loglist.se")
+midway_max_jobs = 500
+jobs_done_so_far = 500
+mif_sim_combined_output_with_traces_df = mif_sim_combined_output_df
+for(param_index in seq(1:jobs_done_so_far)){
+	if(param_index %% 10 == 0){
+	  print(param_index)
+	}
+  
+  #print(param_index)
+
+
+  input_file_name = paste("../Generated_Data/Profiles/",
+                          model_name,
+                          "_Model/",
+                    "Sim_Data_Small_b_a_param_Grid_Search_MIF_run_1/",
+                          model_name,                    "_Sim_Data_Small_b_a_param_Grid_Search_MIF_run_1_subset_",
+                          param_index,
+                          ".RData",
+                          sep = ""
+                          )
+  if(file.exists(input_file_name) == TRUE){
+    load(file = input_file_name)
+    mif_output_df_single_subset = res
+  }else{
+    group_size = nrow(pd)/midway_max_jobs
+    start_index = (param_index-1)*group_size + 1
+    end_index = param_index*group_size
+    Num_mif_runs_per_start = 10
+    param_data_subset_act = pd[start_index:end_index,]
+    param_data_subset = param_data_subset_act[rep(seq_len(nrow(param_data_subset_act)), each = Num_mif_runs_per_start),]
+    #param_data_subset$seed = NA;
+
+    param_data_subset$msg = NA
+    param_data_subset$iter_num = NA
+    param_data_subset$param_index = NA
+    param_data_subset$nfail = NA
+    param_data_subset$trace_num = NA
+    param_data_subset$loglik = NA
+    param_data_subset$loglist.se = NA
+    mif_output_df_single_subset = param_data_subset
+
+  }
+
+  #head(mif_output_df_single_subset)
+  local_MLE = max(mif_output_df_single_subset$loglik, na.rm = TRUE)
+  subset_traces = mif_output_df_single_subset %>%
+    filter(iter_num == 3)
+  subset_data_no_traces =mif_output_df_single_subset %>%
+    filter(msg != "first_trace") %>%
+    filter(msg != "second_trace")
+  mif_sim_combined_output_with_traces_df =
+    rbind(mif_sim_combined_output_with_traces_df,subset_traces)
+  mif_sim_combined_output_df = rbind(mif_sim_combined_output_df, subset_data_no_traces)
+}
+
+output_file_name = paste0("../Generated_Data/Profiles/", model_name,"_Model/","Sim_Data_Small_b_a_param_Grid_Search_MIF_run_1/",
+                          model_name, "_Sim_Data_Small_b_a_param_Grid_Search_MIF_run_1_combined_data_subset_including_traces_and_start.RData")
+
+save(mif_sim_combined_output_with_traces_df, file = output_file_name)
+
+
+output_file_name = paste0("../Generated_Data/Profiles/", model_name,"_Model/","Sim_Data_Small_b_a_param_Grid_Search_MIF_run_1/",
+                          model_name, "_Sim_Data_Small_b_a_param_Grid_Search_MIF_run_1_combined_data.RData")
+
+save(mif_sim_combined_output_df, file = output_file_name)
+
+output_list = list(mif_sim_combined_output_df, mif_sim_combined_output_with_traces_df)
+return(output_list)
+}
+
+
+  combine_grid_search_output(model_name = model_name)
+
+
+
+
+```
+
+
+## Analyze output
+```{r}
+library(GGally)
+
+shared_params_plot1 = function(data, ..., ll= TRUE){
+  if(missing(..1)){
+    ae = aes(color=msg)
+  } else{
+    ae = aes(...)
+  }
+
+  cols = c("E_0", "z_0","R_0", "p_S", "p_H_cond_S","gamma", "b_a",
+           "b_q", "b_p","sigma_M")
+  collabs = c("E_0", "z_0","R_0", "p_S", "p_H_cond_S", "gamma", "b_a",
+              "b_q","b_p", "sigma_M")
+  if(ll) {
+    cols = c(cols, "loglik")
+    collabs = c(collabs, "log(L)")
+  }
+  data %>%
+    ggpairs(mapping = ae, upper = NULL, legend = 1,
+            lower = list(continuous=wrap("points", alpha = 0.5, size = 0.2)),
+            diag = list(continuous = wrap("densityDiag", alpha = 0.5)),
+            columns = cols, columLabels = collabs, labeller = "label_parsed") +
+    theme(legend.position = "bottom", axis.text.x=element_text(angle = -90))
+}
+
+```
+
+Plot shared parameters
+```{r}
+load(file = paste0("../Generated_Data/Profiles/",
+       model_name,"_Model/","Sim_Data_Small_b_a_param_Grid_Search_MIF_run_1/",
+       model_name,
+       "_Sim_Data_Small_b_a_param_Grid_Search_MIF_run_1_combined_data_subset_including_traces_and_start.RData"))
+head(mif_sim_combined_output_with_traces_df)
+
+load(file = paste0("../Generated_Data/Profiles/", model_name,"_Model/","Sim_Data_Small_b_a_param_Grid_Search_MIF_run_1/",
+                          model_name, "_Sim_Data_Small_b_a_param_Grid_Search_MIF_run_1_combined_data.RData"))
+head(mif_sim_combined_output_df)
+top_2_LL_params = mif_sim_combined_output_df %>%
+  mutate(loglik = loglik-max(loglik, na.rm = TRUE)) %>%
+  filter(is.na(loglik) | loglik>-2)
+top_2_LL_params = top_2_LL_params %>%
+  filter(msg == "mif1" || msg == "start")
+mif_1_result_plot =  top_2_LL_params%>%
+  shared_params_plot1()
+
+png("../Figures/Profiles/N_12_Model/Sim_Data_Small_b_a_param_MIF_Run_1/Sim_Data_Small_b_a_param_MIF_Run_1_Histogram_Result_Plot.png")
+print(mif_1_result_plot)
+dev.off()
+```
+
+### Analyze R_0 values
+```{r}
+top_2_LL_end_params = top_2_LL_params %>%
+  filter(msg == "mif1")
+top_2_LL_end_params$R_0
+min(mif_sim_combined_output_df$R_0)
+mif_sim_combined_output_df_end_params = filter(mif_sim_combined_output_df) %>%
+  filter(msg == "mif1")
+min(mif_sim_combined_output_df_end_params$R_0)
+
+range(top_2_LL_end_params$R_0)
+hist(top_2_LL_end_params$R_0)
+
+
+p = ggplot(data = top_2_LL_end_params,
+           aes(x = R_0, y = loglik)) +
+  geom_point() +
+  rahul_man_figure_theme
+p
+
+p = ggplot(data = top_2_LL_end_params,
+           aes(x = E_0, y = loglik)) +
+  geom_point() +
+  rahul_man_figure_theme
+p
+
+p = ggplot(data = top_2_LL_end_params,
+           aes(x = E_0+z_0, y = loglik)) +
+  geom_point() +
+  rahul_man_figure_theme
+p
+
+p = ggplot(data = top_2_LL_end_params,
+           aes(x = R_0, y = E_0+z_0)) +
+  geom_point() +
+  rahul_man_figure_theme
+p
+
+p = ggplot(data = top_2_LL_end_params,
+           aes(x = R_0, y = p_S)) +
+  geom_point() +
+  rahul_man_figure_theme
+p
+
+range(top_2_LL_end_params$sigma_M)
+
+```
+
+### Analsyis of top 20 LL
+```{r}
+top_25_LL = mif_sim_combined_output_df_end_params %>%
+  filter(loglik > max(loglik) - 25)
+range(top_25_LL$R_0)
+
+top_20_LL_end_params = mif_sim_combined_output_df_end_params %>%
+  filter(loglik > max(loglik)-20)
+
+top_5_LL = mif_sim_combined_output_df_end_params %>%
+  filter(loglik > max(loglik) - 5)
+range(top_5_LL$R_0)
+range(top_5_LL$E_0)
+p = ggplot(data = top_5_LL,
+           aes(x = R_0, y = E_0)) +
+  geom_point() + rahul_man_figure_theme
+p
+
+p = ggplot(data = top_5_LL,
+           aes(x = p_S, y = R_0)) +
+  geom_point() + rahul_man_figure_theme
+p
+```
+
+
+### Analsyis of top 20 LL
+```{r}
+top_25_LL = mif_sim_combined_output_df_end_params %>%
+  filter(loglik > max(loglik) - 25)
+range(top_25_LL$R_0)
+
+top_20_LL_end_params = mif_sim_combined_output_df_end_params %>%
+  filter(loglik > max(loglik)-20)
+
+top_5_LL = mif_sim_combined_output_df_end_params %>%
+  filter(loglik > max(loglik) - 5)
+range(top_5_LL$R_0)
+range(top_5_LL$E_0)
+p = ggplot(data = top_5_LL,
+           aes(x = R_0, y = E_0)) +
+  geom_point() + rahul_man_figure_theme
+p
+
+p = ggplot(data = top_5_LL,
+           aes(x = p_S, y = R_0)) +
+  geom_point() + rahul_man_figure_theme
+p
+```
+
+
+### Get param grid box for profiles
+```{r}
+#head(top_20_LL_end_params)
+
+
+top_20_LL_box = top_20_LL_end_params %>%
+  filter(loglist.se < 2) %>%
+  sapply(range)
+write.csv(top_20_LL_box, file = "../Generated_Data/Profile_Combination_Lists/N_12_Model/Sim_Data_Small_b_a_param_orignal_20_LL_param_box_from_1st_MIF_run.csv",
+          row.names = FALSE)
+```
+
+
