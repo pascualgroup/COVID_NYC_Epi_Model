@@ -2,7 +2,7 @@
 
 This repository contains the supporting data and code for the PNAS publication "Quantifying asymptomatic infection and transmission of COVID-19 in New York City using observed cases,serology, and testing capacity" by R. Subramanian, Q. He, and M. Pascual. 
 
-#Organization
+# Organization
 The "Code" folder contains code used to implement the model.
 All raw data is stored in the Down_Data folder.
 Data generated during the analysis is stored in the Generated_Data folder.
