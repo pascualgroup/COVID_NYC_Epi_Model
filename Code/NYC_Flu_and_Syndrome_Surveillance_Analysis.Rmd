@@ -104,7 +104,7 @@ write.csv(resp_daily_synd_surveil_clean_data,
 ```
 
 ### Weekly cases
-Repeat the anlaysis using weekly syndrome surveillance data instead of daily (that way it is the same frequency as the confirmed influenza case counts).
+Repeat the analysis using weekly syndrome surveillance data instead of daily (that way it is the same frequency as the confirmed influenza case counts).
 We assume that "2016 Week 1" refers to the week from Jan 1st-Jan2nd.
 We therefore start from the second week. 
 
@@ -340,8 +340,8 @@ p
 There were 2962 resp syndrome reports during the first week of January 2016. This is much lower than all other dates in this period.
 For comparison, 9,555 reports were obtained in the next week.
 The first week is about 31% of the second week.
-This makes sense if the reporitng period for the first week is only from Jan 1st (Friday) to Jan 2nd, 2016 (Saturday), about 28.6% of the size of a regular week.
-Therefore, we will record the resp reports as occruing on the raw week (not CDC adjusted week) and ignore the first week's reports for comparison.
+This makes sense if the reporting period for the first week is only from Jan 1st (Friday) to Jan 2nd, 2016 (Saturday), about 28.6% of the size of a regular week.
+Therefore, we will record the resp reports as occurring on the raw week (not CDC adjusted week) and ignore the first week's reports for comparison.
 
 You can see this in the plots of the first week of every year-all except 2017 are lower than the following week, and 2017's first day was on a Sunday. 
 
@@ -607,7 +607,7 @@ sigma_epsilon
 ```
 
 ### Model Equation
-Let $G(w)$ be the number of non-COVID respiratory syndrome cases presenting in the ED of hosptials in NYC in week $w$ of year $y$.
+Let $G(w)$ be the number of non-COVID respiratory syndrome cases presenting in the ED of hospitals in NYC in week $w$ of year $y$.
 
 \begin{equation}
 G(w) = g_0 + g_{\text{F}} F(w,y) + \beta_{\text{w}^2}w^2 + \beta_{\text{w}^1}w + \beta_{\text{w}^0} + \epsilon 
@@ -829,12 +829,4 @@ p = ggplot(data = potential_COVID_resp,
 p
 ```
 
-#Strategy
-Do lin reg of flu confirmed cases vs resp and ILI for 2016-2019
-Take residual to get non flu cases Hopefully stationary 
-(If stationary, take mean and var over study period)
-The non-flu non COVID we assume are same in 2020
-Now, to get flu from this, use flu confirmed cases
-during study period and multiply by estmated coefficient from 
-linear regression. 
-Then you have an estimate of both flu and non-flu non-COVID cases over the study period.
+
