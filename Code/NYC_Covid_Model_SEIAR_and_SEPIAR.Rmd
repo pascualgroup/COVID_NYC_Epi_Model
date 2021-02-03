@@ -1976,14 +1976,35 @@ save(L_pfilter_sim_at_long_mif_end_2,
 # This is higher than true sim mean of  -619.86722850 (se 0.03028052), so it seems to have worked (at least, this is enough to move on to a grid search using Midway).
 ```
 
+# MIF Run 1
+## Code to generate parameter grid for initial grid search
+```{r, cache=FALSE}
+knitr::read_chunk('generate_param_grid_covid_NYC_N_12.R')
+```
 
+```{r generate_param_grid_N_12, eval = FALSE, echo = TRUE}
+```
+
+## Code for first MIF run from grid search (SEIAR Model)
+```{r, cache=FALSE}
+knitr::read_chunk('MIF_run_Model_N_12.R')
+```
+
+```{r mif_code_N12, eval = FALSE, echo = TRUE}
+```
+
+### Script to execute code for first MIF run on Midway computing cluster
+
+```{r engine='bash', comment=''}
+cat Midway_script_Model_N_12_Grid_Search_MIF_run_1_Profile.sbatch
+```
 # Analyze MIF Run 1
 ### Combine output
 ## Combine Midway output susbsets
-Once all of the 250 array jobs submitted to Midway f have finished running on the cluster, the output from each of those 250 jobs is combined into one data frame  with combinations and likelihoods for a particular profile. For ease of computation, we only include the top 100LL of parameter combinations within each array job.
+Once all of the 500 array jobs submitted to Midway have finished running on the cluster, the output from each of those 500 jobs is combined into one data frame  with combinations and likelihoods for the initial grid search. 
 
 ### Code for combining
-```{r}
+```{r, results="hide"}
 
   # ---- combine_grid_search_output ----
 
@@ -2027,7 +2048,7 @@ jobs_done_so_far = 500
 mif_sim_combined_output_with_traces_df = mif_sim_combined_output_df
 for(param_index in seq(1:jobs_done_so_far)){
 	if(param_index %% 10 == 0){
-	  print(param_index)
+	  #print(param_index)
 	}
 
 
@@ -2157,7 +2178,7 @@ dev.off()
 ```{r}
 top_2_LL_end_params = top_2_LL_params %>%
   filter(msg == "mif1")
-top_2_LL_end_params$R_0
+#top_2_LL_end_params$R_0
 min(mif_sim_combined_output_df$R_0)
 mif_sim_combined_output_df_end_params = filter(mif_sim_combined_output_df) %>%
   filter(msg == "mif1")
@@ -2199,32 +2220,10 @@ p
 
 range(top_2_LL_end_params$sigma_M)
 
-```
-
-### Analsyis of top 20 LL
-```{r}
-top_25_LL = mif_sim_combined_output_df_end_params %>%
-  filter(loglik > max(loglik) - 25)
-range(top_25_LL$R_0)
-
 top_20_LL_end_params = mif_sim_combined_output_df_end_params %>%
   filter(loglik > max(loglik)-20)
 
-top_5_LL = mif_sim_combined_output_df_end_params %>%
-  filter(loglik > max(loglik) - 5)
-range(top_5_LL$R_0)
-range(top_5_LL$E_0)
-p = ggplot(data = top_5_LL,
-           aes(x = R_0, y = E_0)) +
-  geom_point() + rahul_man_figure_theme
-p
-
-p = ggplot(data = top_5_LL,
-           aes(x = p_S, y = R_0)) +
-  geom_point() + rahul_man_figure_theme
-p
 ```
-
 
 
 
@@ -2366,7 +2365,7 @@ dev.off()
 ```
 
 
-###Load ML combination for model accross all five profiles
+###Load ML combination for model 
 ```{r}
 
 MLE = mif_sim_combined_output_df %>%
@@ -2384,33 +2383,9 @@ write.csv(MLE, file = "../Generated_Data/Profiles/N_12_Model/Grid_Search_MIF_run
 write.csv(MIF_run_1_MLE_params, file = "../Generated_Data/Profiles/N_12_Model/Grid_Search_MIF_run_1/MLE_Grid_Search_MIF_run_1.csv",
           row.names = FALSE)
 
-small_E_0_param = top_5_LL %>%
-  filter(E_0 == min(E_0))
 
-small_E_0_param_combo = small_E_0_param %>%
-  dplyr::select(-param_index, -iter_num,
-                -msg, -loglik, -nfail,
-                -trace_num, -loglist.se)
 
-small_p_S_param = top_2_LL_end_params %>%
-  filter(p_S == min(p_S))
 
-small_p_S_param_combo = small_p_S_param %>%
-  dplyr::select(-param_index, -iter_num,
-                -msg, -loglik, -nfail,
-                -trace_num, -loglist.se)
-
-small_p_S_param
-
-write.csv(small_p_S_param, file = "../Generated_Data/Profiles/N_12_Model/Grid_Search_MIF_run_1/small_p_S_top_2_LL_comb_with_loglik.csv",
-          row.names = FALSE)
-
-save(top_2_LL_end_params,file = paste0("../Generated_Data/Profiles/", model_name, "_Model/Grid_Search_MIF_run_1/top_2_LL_end_params.RData"))
-# small_R_0_ML_params = small_R_0_MLE %>%
-#   dplyr::select(-param_index, -iter_num,
-#                 -msg, -loglik, -nfail,
-#                 -trace_num, -loglist.se)
-# small_R_0_ML_params
 
 ```
 
@@ -2443,7 +2418,7 @@ colnames(sim_data_quant$Y) = c("Q2.5", "Q97.5")
 ```
 
 ### Compare simulated trajectories with that of real data
-The plots below show the real observed dengue case trajectory versus the mean and 2.5$\%$ and 97.5$\%$ quantile from the stochastic simulation of the baseline model MLE.
+The plots below show the real observed dengue case trajectory versus the mean and 2.5$\%$ and 97.5$\%$ quantile from the stochastic simulation of the baseline model maximum likelihood estimate.
 ```{r}
 
 
@@ -2669,271 +2644,10 @@ dev.off()
 ```
 
 
-### Simulate trajectories from small p_S param
-We simulate 100 stochastic trajectories (both process and environmental noise) from the overall MLE for the baseline model. We calculate the mean and the 2.5$\%$ and 97.5$\%$ quantile for values of the trajectories.
-```{r}
-
-##Simulation from ML
-sim_data = simulate(nsim = 100,
-                    seed = 12345,
-                    times = Observed_data$times,
-                    t0 = t0,
-                    rprocess = pomp::euler(rproc,delta.t = 1),
-                    params = small_p_S_param_combo,
-                    paramnames = paramnames,
-                    statenames = statenames,
-                    obsnames = obsnames,
-                    accumvars = acumvarnames,
-                    rinit = init,
-                    rmeas = rmeas,
-                    partrans = par_trans,
-                    covar = covar,
-                    format = "data.frame")
-#head(sim_data)
-sim_data_median_Y = aggregate(Y ~ time, sim_data, median)
-sim_data_quant = aggregate(Y ~ time, sim_data, quantile, probs = c(0.025, 0.975))
-sim_data_quant$Y = as.data.frame(sim_data_quant$Y)
-colnames(sim_data_quant$Y) = c("Q2.5", "Q97.5")
-
-```
-
-
-
-
-
-### Compare simulated trajectories with that of real data
-The plots below show the real observed dengue case trajectory versus the mean and 2.5$\%$ and 97.5$\%$ quantile from the stochastic simulation of the baseline model MLE.
-```{r}
-
-
-
-
-comp_data = data.frame(time = sim_data_median_Y$time,
-                       sim_data_median = sim_data_median_Y$Y,
-                      sim_data_low_Q = sim_data_quant$Y$Q2.5,
-                      sim_data_high_Q = sim_data_quant$Y$Q97.5,
-                       true_data = Observed_data$Y)
-
-comp_data_melt = melt(comp_data, id.vars = c("time", "sim_data_low_Q",
-                                             "sim_data_high_Q"))
-
-
-
-
-p = ggplot(data = comp_data_melt) +
-  geom_ribbon(aes(x = time, ymin = sim_data_low_Q,
-                  ymax = sim_data_high_Q), fill = "grey70") +
-  geom_line(aes(x = time, y = value, color = variable)) +
-  geom_point(aes(x = time, y = value, color = variable), size  = 3) +
-  rahul_theme +
-  theme_white_background +
-  median_legend_lab + rahul_man_figure_theme +
-   xlab("Days since March 1, 2020")+
-  ylab("Observed Daily Cases")
-p
-png(paste0("../Figures/Profiles/", model_name,
- "_Model/MIF_Run_1/cases_over_time_simulation_from_small_p_S_params.png"))
-print(p)
-dev.off()
-
-
-
-p = ggplot(data = comp_data_melt) +
-  geom_ribbon(aes(x = time, ymin = log(sim_data_low_Q),
-                  ymax = log(sim_data_high_Q)), fill = "grey70") +
-  geom_line(aes(x = time, y = log(value), color = variable)) +
-  geom_point(aes(x = time, y = log(value), color = variable), size = 3) +
-  rahul_theme +
-  theme_white_background +
-  median_legend_lab_with_fit_data + rahul_man_figure_theme +
-   xlab("Days since March 1, 2020")+
-  ylab("log(Observed Daily Cases)")
-p
-
-png(paste0("../Figures/Profiles/", model_name,
-           "_Model/MIF_Run_1/log_cases_over_time_simulation_from_small_p_S_params.png"))
-print(p)
-dev.off()
-
-p = ggplot(data = comp_data_melt) +
-  geom_ribbon(aes(x = time, ymin = log(sim_data_low_Q),
-                  ymax = log(sim_data_high_Q)), fill = "grey70") +
-  geom_line(aes(x = time, y = log(value), color = variable)) +
-  geom_point(aes(x = time, y = log(value), color = variable),
-             size = 3) +
-  rahul_theme +
-  theme_white_background +
-  median_legend_lab_with_fit_data +rahul_man_figure_theme+
-   xlab("Days since March 1, 2020")+
-  ylab("log(Daily Reported Cases)")
-p
-
-```
-
-
-
-### S over N
-```{r}
-sim_data$S_over_N = sim_data$S/sim_data$N
-
-sim_data_S_over_N_median = aggregate(S_over_N ~ time, sim_data, median)
-sim_data_S_over_N_quant = aggregate(S_over_N ~ time, sim_data, quantile, probs = c(0.025, 0.975))
-sim_data_S_over_N_quant$S_over_N = as.data.frame(sim_data_S_over_N_quant$S_over_N)
-colnames(sim_data_S_over_N_quant$S_over_N) = c("Q2.5", "Q97.5")
-
-
-comp_data = data.frame(time = sim_data_S_over_N_median$time,
-                       sim_data_median = sim_data_S_over_N_median$S_over_N,
-                      sim_data_low_Q = sim_data_S_over_N_quant$S_over_N$Q2.5,
-                      sim_data_high_Q = sim_data_S_over_N_quant$S_over_N$Q97.5)
-
-comp_data_melt = melt(comp_data, id.vars = c("time", "sim_data_low_Q",
-                                             "sim_data_high_Q"))
-
-
-
-
-p = ggplot(data = comp_data_melt) +
-  geom_ribbon(aes(x = time, ymin = sim_data_low_Q,
-                  ymax = sim_data_high_Q), fill = "grey70") +
-  geom_line(aes(x = time, y = value, color = variable)) +
-  geom_point(aes(x = time, y = value, color = variable), size  = 3) +
-  rahul_theme +
-  theme_white_background +
-  median_legend_lab + rahul_man_figure_theme +
-   xlab("Days since March 1, 2020")+
-  ylab("S over N")
-p
-png("../Figures/Profiles/N_12_Model/Small_p_S_param_S_over_N.png")
-print(p)
-dev.off()
-```
-
-### Specific trajectories (S/N small p_s_param combination)
-```{r}
-select_trajectories  = filter(sim_data, .id %in% seq(from = 5, to = 10))
-select_trajectories = dplyr::select(select_trajectories, time, .id, S, N)
-select_trajectories = select_trajectories %>%
-  mutate(S_over_N = S/N)
-select_trajectories = select_trajectories %>%
-  dplyr::select(-S, -N)
-select_trajectories$type = "Sim"
-
-
-
-
-library(RColorBrewer)
-full_blue_pallete = brewer.pal(9, "Blues")
-sim_traj_pallete = full_blue_pallete[9:4]
-sim_traj_scale = scale_color_manual(name = "Legend", values = c( sim_traj_pallete), labels =  c("Sim_Traj_1", "Sim_Traj_2", "Sim_Traj_3", "Sim_Traj_4", "Sim_Traj_5", "Sim_Traj_6")) 
-p = ggplot(data = select_trajectories,
-           aes(x = time, y = S_over_N, color = .id)) + geom_point(size = 2) + geom_line(aes(group = .id)) + rahul_theme + rahul_man_figure_theme + theme_white_background +
-  sim_traj_scale
-p
-png("../Figures/Profiles/N_12_Model/MIF_Run_1/Specific_traj_S_over_N_small_p_S_comb.png")
-print(p)
-dev.off()
-```
-
-### R over N (small $p_S$ parameter combination)
-```{r}
-sim_data$R_over_N = (sim_data$R_A +sim_data$R_F + sim_data$R_H)/sim_data$N
-
-sim_data_R_over_N_median = aggregate(R_over_N ~ time, sim_data, median)
-sim_data_R_over_N_quant = aggregate(R_over_N ~ time, sim_data, quantile, probs = c(0.025, 0.975))
-sim_data_R_over_N_quant$R_over_N = as.data.frame(sim_data_R_over_N_quant$R_over_N)
-colnames(sim_data_R_over_N_quant$R_over_N) = c("Q2.5", "Q97.5")
-
-
-comp_data = data.frame(time = sim_data_R_over_N_median$time,
-                       sim_data_median = sim_data_R_over_N_median$R_over_N,
-                      sim_data_low_Q = sim_data_R_over_N_quant$R_over_N$Q2.5,
-                      sim_data_high_Q = sim_data_R_over_N_quant$R_over_N$Q97.5)
-
-comp_data_melt = melt(comp_data, id.vars = c("time", "sim_data_low_Q",
-                                             "sim_data_high_Q"))
-
-
-
-
-p = ggplot(data = comp_data_melt) +
-  geom_ribbon(aes(x = time, ymin = sim_data_low_Q,
-                  ymax = sim_data_high_Q), fill = "grey70") +
-  geom_line(aes(x = time, y = value, color = variable)) +
-  geom_point(aes(x = time, y = value, color = variable), size  = 3) +
-  rahul_theme +
-  theme_white_background +
-  median_legend_lab + rahul_man_figure_theme +
-   xlab("Days since March 1, 2020")+
-  ylab("R over N")
-p
-png("../Figures/Profiles/N_12_Model/Small_p_S_param_R_over_N.png")
-print(p)
-dev.off()
-```
-
-### Specific trajectories (R/N small p_s_parameter combination)
-```{r}
-select_trajectories  = filter(sim_data, .id %in% seq(from = 5, to = 10))
-select_trajectories = dplyr::select(select_trajectories, time, .id, R_A,R_F, R_H, N)
-select_trajectories = select_trajectories %>%
-  mutate(R_over_N = (R_A + R_H + R_F)/N)
-select_trajectories = select_trajectories %>%
-  dplyr::select(-R_A, -R_H, -R_F, -N)
-select_trajectories$type = "Sim"
-
-
-
-
-library(RColorBrewer)
-full_blue_pallete = brewer.pal(9, "Blues")
-sim_traj_pallete = full_blue_pallete[9:4]
-sim_traj_scale = scale_color_manual(name = "Legend", values = c( sim_traj_pallete), labels =  c("Sim_Traj_1", "Sim_Traj_2", "Sim_Traj_3", "Sim_Traj_4", "Sim_Traj_5", "Sim_Traj_6")) 
-p = ggplot(data = select_trajectories,
-           aes(x = time, y = R_over_N, color = .id)) + geom_point(size = 2) + geom_line(aes(group = .id)) + rahul_theme + rahul_man_figure_theme + theme_white_background +
-  sim_traj_scale
-p
-png("../Figures/Profiles/N_12_Model/MIF_Run_1/Specific_traj_R_over_N_small_p_S_comb.png")
-print(p)
-dev.off()
-```
-
-
-### Compare R/N with anitbody data (small $p_S$ parameter combination)
-```{r}
-p = ggplot() +
-  geom_ribbon(data = comp_data_melt,
-              aes(x = time, ymin = sim_data_low_Q,
-                  ymax = sim_data_high_Q), fill = "grey70") +
-  geom_line(data = comp_data_melt,
-            aes(x = time, y = value, color = variable)) +
-  geom_point(data = comp_data_melt,
-             aes(x = time, y = value, color = variable), size  = 3) +
-  rahul_theme +
-  theme_white_background +
-  median_legend_lab + rahul_man_figure_theme +
-   xlab("Days since March 1, 2020")+
-  ylab("R over N") +
-  geom_ribbon(data = nyc_antibody_df,aes(x = times, ymin = lower_CI,
-                                ymax = upper_CI),
-                                fill = 'grey70',
-                                alpha = 0.7) +
-  geom_point(data = nyc_antibody_df,
-           aes(x = times, y = Prop_Positive), color = 'blue') +
-  geom_line(data = nyc_antibody_df,
-           aes(x = times, y = Prop_Positive), color = 'blue')
-  
-p
-png("../Figures/Profiles/N_12_Model/Small_p_S_param_R_over_N_vs_anitbody_test.png")
-print(p)
-dev.off()
-```
-
-# Top 2LL Simluation (TBD)
+# Top 2LL Simluation 
 
 ### Combine output subsets
 ```{r}
-head(top_2_LL_end_params)
 
 top_2_LL_end_with_antibody_LL =
     data.frame(matrix(nrow = 0,
@@ -3852,6 +3566,36 @@ combine_profile_output(profile_var = "b_a", model_name = model_name)
 
 ```
 
+# Profile over b_a (SEPIAR Model)
+
+## Code to generate profile combinations
+```{r, cache=FALSE}
+knitr::read_chunk('generate_profile_combinations_covid_nyc_N_12.R')
+```
+
+```{r generate_profile_combinations_N12, eval = FALSE, echo = TRUE}
+```
+
+## Code to run MIF for profile (SEPIAR Model)
+```{r, cache=FALSE}
+knitr::read_chunk('MIF_run_Profile_Model_N_12.R')
+```
+
+```{r mif_code_profile_N_12, eval = FALSE, echo = TRUE}
+```
+
+### Script to execute code for b_a profile MIF run on Midway computing cluster
+
+```{r engine='bash', comment=''}
+cat Midway_script_Model_N_12_b_a_Profile.sbatch
+```
+
+### Script to execute code for G_w_y_scaling profile MIF run on Midway computing cluster
+
+```{r engine='bash', comment=''}
+cat Midway_script_Model_N_12_G_w_y_scaling_Profile.sbatch
+```
+
 # Plot profiles
 For each profile, three plots are generated. The first plot("all_clean_data_points") shows the likelihoods of every MIF run conducted for that profile. The second plot is the actual plot of the profile. For the second plot, only the maximum likelihood of each profiled parameter value is shown on the plot. The third plot is a "zoom-in" of the region near the MLE, only showing combinations within 20 log-likelihood units of the MLE. On all three plots, red horizontal lines denote likelihood values 20 log-likelihood units below the profile MLE, while blue horizontal lines denote likelihood values 2 log-likelihood units below the MLE.
 
@@ -4046,10 +3790,19 @@ range(small_R_0_profile_peak_params$p_S)
 
 ## Plot Antibody LL for Profile Peaks
 
-### b_a profile peak
+### Simulate at b_a profile peak
 ```{r}
 source("Sim_b_a_profile_peak_Model_N_12.R")
 ```
+
+### Code for simulations
+```{r, cache=FALSE}
+knitr::read_chunk('Sim_b_a_profile_peak_Model_N_12.R')
+```
+
+```{r sim_b_a_profile_peak_N_12, eval = FALSE, echo = TRUE}
+```
+
 ## R over N for top parameter combinations within 2LL when fit to antibody and case data (b_a Profile)
 ```{r}
 
@@ -5315,6 +5068,13 @@ fig
 source("Sim_G_w_y_scaling_profile_peak_Model_N_12.R")
 ```
 
+### Code for simulations
+```{r, cache=FALSE}
+knitr::read_chunk('Sim_G_w_y_scaling_profile_peak_Model_N_12.R')
+```
+
+```{r sim_G_w_y_scaling_profile_peak_N_12, eval = FALSE, echo = TRUE}
+```
 ## R over N for top parameter combinations within 2LL when fit to antibody and case data (G_w_y_scaling Profile)
 ```{r}
 
@@ -5865,4 +5625,78 @@ print(p)
 dev.off()
 
 antibody_top_2_LL_from_G_w_y_scaling_profile_top_2_LL$R_0_NGM
+```
+
+# Code for validation analysis using simulated data
+
+## Code to run MIF for initial grid search (SEIAR) for big b_a simulation trajectory
+```{r, cache=FALSE}
+knitr::read_chunk('MIF_run_Model_N_12_sim_data_big_b_a.R')
+```
+
+```{r mif_code_grid_N_12_big_b_a_sim, eval = FALSE, echo = TRUE}
+```
+
+## Code to run MIF for initial grid search (SEIAR) for small b_a simulation trajectory
+```{r, cache=FALSE}
+knitr::read_chunk('MIF_run_Model_N_12_sim_data_small_b_a.R')
+```
+
+```{r mif_code_grid_N_12_small_b_a_sim, eval = FALSE, echo = TRUE}
+```
+
+### Script to execute code on Midway computing cluster for grid search MIF run (SEIAR) for big b_a simulation trajectory 
+
+```{r engine='bash', comment=''}
+cat Midway_script_Model_N_12_Simulation_Fit_Big_b_a_Grid_Search_MIF_run_1.sbatch
+```
+
+### Script to execute code on Midway computing cluster for grid search MIF run (SEIAR) for small b_a simulation trajectory 
+
+```{r engine='bash', comment=''}
+cat Midway_script_Model_N_12_Simulation_Fit_Small_b_a_Grid_Search_MIF_run_1.sbatch
+```
+
+## Code to generate profile combinations for b_a profile (SEPIAR) for big b_a simulation trajectory
+```{r, cache=FALSE}
+knitr::read_chunk('generate_profile_combinations_covid_nyc_N_12_Sim_data_Big_b_a_param.R')
+```
+
+```{r generate_profile_combinations_N_12_big_b_a_sim, eval = FALSE, echo = TRUE}
+```
+
+## Code to generate profile combinations for b_a profile (SEPIAR) for small b_a simulation trajectory
+```{r, cache=FALSE}
+knitr::read_chunk('generate_profile_combinations_covid_nyc_N_12_Sim_data_Small_b_a_param.R')
+```
+
+```{r generate_profile_combinations_N_12_small_b_a_sim, eval = FALSE, echo = TRUE}
+```
+
+## Code to run MIF for b_a profile (SEPIAR) for big b_a simulation trajectory
+```{r, cache=FALSE}
+knitr::read_chunk('MIF_run_Profile_Model_N_12_sim_data_big_b_a.R')
+```
+
+```{r mif_code_profile_N_12_big_b_a_sim, eval = FALSE, echo = TRUE}
+```
+
+## Code to run MIF for b_a profile (SEPIAR) for small b_a simulation trajectory
+```{r, cache=FALSE}
+knitr::read_chunk('MIF_run_Profile_Model_N_12_sim_data_small_b_a.R')
+```
+
+```{r mif_code_profile_N_12_small_b_a_sim, eval = FALSE, echo = TRUE}
+```
+
+### Script to execute code on Midway computing cluster for b_a profile MIF run (SEPIAR) for big b_a simulation trajectory 
+
+```{r engine='bash', comment=''}
+cat Midway_script_Model_N_12_b_a_Profile_Sim_data_big_b_a_param.sbatch
+```
+
+### Script to execute code on Midway computing cluster for b_a profile MIF run (SEPIAR) for small b_a simulation trajectory 
+
+```{r engine='bash', comment=''}
+cat Midway_script_Model_N_12_b_a_Profile_Sim_data_small_b_a_param.sbatch
 ```

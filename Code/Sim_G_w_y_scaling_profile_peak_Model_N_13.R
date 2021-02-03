@@ -1,3 +1,4 @@
+# ---- sim_G_w_y_scaling_profile_peak_N_13 ----
 
 
 #rm(list = ls())
@@ -119,7 +120,7 @@ colnames(all_combo_R_data) = c("time", "sim_data_R_over_N_median ",  "sim_data_R
   
   
   for(combo_index in seq(1:nrow(top_2_LL_end_data_subset))){
-      print(combo_index)
+      #print(combo_index)
     
     combo_params = top_2_LL_end_data_subset[combo_index,]
     combo_params = dplyr::select(combo_params, -one_of(
