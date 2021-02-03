@@ -4,8 +4,11 @@ This repository contains the supporting data and code for the PNAS publication "
 
 # Organization
 The "Code" folder contains code used to implement the model.
+
 All raw data is stored in the Down_Data folder.
+
 Data generated during the analysis is stored in the Generated_Data folder.
+
 Figures generated during the analysis are stored in the Figures folder.
 
 
