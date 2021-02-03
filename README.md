@@ -2,10 +2,13 @@
 
 This repository contains the supporting data and code for the PNAS publication "Quantifying asymptomatic infection and transmission of COVID-19 in New York City using observed cases,serology, and testing capacity" by R. Subramanian, Q. He, and M. Pascual. 
 
-#Organization
+# Organization
 The "Code" folder contains code used to implement the model.
+
 All raw data is stored in the Down_Data folder.
+
 Data generated during the analysis is stored in the Generated_Data folder.
+
 Figures generated during the analysis are stored in the Figures folder.
 
 
@@ -49,4 +52,4 @@ See the file "Plot_code_for_p_S_profile_serology_LL_sim_traj_vs_obs_fit.Rmd" for
 For the validation analysis code used for MIF fitting to big/small b_a parameter simulated trajectories for the SEIAR grid search and SEPIAR b_a profile search along with code used to generate the profile combinations for b_a profile, please see the last section of the main implementation file (NYC_Covid_Model_SEIAR_and_SEPIAR.Rmd).
 
 ## IFR Calculations
-The file "IFR_Calculations" contains the code used to calculate the infection fatality rate.
+The file "IFR_Calculations.Rmd" contains the code used to calculate the infection fatality rate.
