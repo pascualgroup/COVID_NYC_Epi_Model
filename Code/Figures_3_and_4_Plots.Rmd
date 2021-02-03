@@ -1,11 +1,17 @@
 ---
-title: "Surface Plots from b_a Profile"
+title: "Plots for Figures 3 and 4"
 author: "Rahul Subramanian"
 date: "7/8/2020"
 output:
   html_document: default
   pdf_document: default
 ---
+This document contains the code used to generate the panels in Figures 3 and 4. 
+
+The "big b_a" and "small b_a" parameters identified here were used to generate trajectories for the validation analysis.
+
+The combined figure for Figure 3 was plotted in Matlab using the data generated in "R_0_Surface_Plot_data_for_revision.csv". The Matlab code is included in the file "Surface_Plot_Panel_Script_add_colorbar_2D.m" in the repo. 
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
