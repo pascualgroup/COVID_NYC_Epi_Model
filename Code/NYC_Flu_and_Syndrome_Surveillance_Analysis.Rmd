@@ -1,0 +1,840 @@
+---
+title: "NYC_Flu_Analysis"
+author: "Rahul Subramanian"
+date: "5/23/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load_lib, echo = FALSE, include=FALSE}
+rm(list = ls())
+library(plyr)
+library(tidyverse)
+library(magrittr)
+library(tibble)
+library(stringi)
+library(pomp)
+library(xtable)
+#library(panelPomp)
+#library(foreach)
+#library(iterators)
+#library(doRNG)
+#library(aakmisc) ## available at https://kingaa.github.io/
+stopifnot(packageVersion("pomp")>="2.2")
+#stopifnot(packageVersion("panelPomp")>="0.9.1")
+#stopifnot(packageVersion("aakmisc")>="0.26.2")
+options(
+  stringsAsFactors=FALSE,
+  keep.source=TRUE,
+  encoding="UTF-8"
+)
+set.seed(407958184)
+```
+
+```{r echo = FALSE, include=FALSE}
+source("load_libraries_essential.R")
+source("rahul_theme.R")
+library(zoo)
+library(stringr)
+```
+
+
+## Syndrome Surveillance Definitions
+
+Source: https://a816-health.nyc.gov/hdi/epiquery/visualizations?PageType=ps&PopulationSource=Syndromic
+
+
+Respiratory includes ED chief complaint mention of bronchitis, chest cold, chest congestion, chest pain, cough, difficulty breathing, pneumonia, shortness of breath, and upper respiratory infection.
+
+ILI includes ED chief complaint mention of flu, fever, and sore throat.
+
+## Load Raw Data
+
+### Raw Syndrome Sureillance Data
+```{r}
+resp_daily_synd_surveil_raw_data =
+  read.csv("../Down_Data/respiratory_daily_syndrome_surveillance_16_20_NYC_no_data_note_csv.csv")
+head(resp_daily_synd_surveil_raw_data)
+resp_daily_synd_surveil_clean_data =
+  resp_daily_synd_surveil_raw_data %>%
+  dplyr::select(Date = Date,
+                Syndrome = Ind1Name,
+                Borough = Dim1Value,
+                Age_Group = Dim2Value,
+                Count = X) %>%
+  filter(Borough == "Citywide") %>%
+  filter(Age_Group == "All age groups") %>%
+  mutate(Adj_Date = mdy(Date)) %>%
+  mutate(Adj_Count = str_replace(string = Count,
+              pattern = ',',replacement =  '')) %>%
+  mutate(Adj_Count = as.numeric(Adj_Count)) %>%
+  dplyr::select(Date = Adj_Date, Syndrome,
+                Count = Adj_Count)
+
+  
+
+p = ggplot(data = resp_daily_synd_surveil_clean_data,
+           aes(x = Date, y = Count)) + geom_point() +
+  geom_line() + rahul_man_figure_theme
+p
+
+p = ggplot(data = resp_daily_synd_surveil_clean_data,
+           aes(x = Date, y = Count)) + geom_point() +
+  rahul_man_figure_theme
+p
+
+resp_daily_synd_surveil_clean_data  = resp_daily_synd_surveil_clean_data %>%
+  mutate(Day_in_Year = yday(Date),
+         Year = year(Date))
+
+p = ggplot(data = resp_daily_synd_surveil_clean_data,
+           aes(x = Day_in_Year, y = Count,
+               color = as.character(Year))) + geom_point() +
+  rahul_man_figure_theme
+p
+
+write.csv(resp_daily_synd_surveil_clean_data,
+          file = "../Generated_Data/resp_daily_synd_surveil_clean_data.csv",
+          row.names = FALSE)
+
+
+```
+
+### Weekly cases
+Repeat the anlaysis using weekly syndrome surveillance data instead of daily (that way it is the same frequency as the confirmed influenza case counts).
+We assume that "2016 Week 1" refers to the week from Jan 1st-Jan2nd.
+We therefore start from the second week. 
+
+If first day of the year falls on day 4 or earlier, the first week 
+```{r}
+resp_weekly_synd_surveil_raw_data =
+  read.csv("../Down_Data/respiratory_weekly_syndrome_surveillance_16_20_NYC_no_data_note_csv.csv")
+head(resp_weekly_synd_surveil_raw_data)
+resp_weekly_synd_surveil_clean_data =
+  resp_weekly_synd_surveil_raw_data %>%
+  dplyr::select(Date = Date,
+                Syndrome = Ind1Name,
+                Borough = Dim1Value,
+                Age_Group = Dim2Value,
+                Count = X) %>%
+  filter(Borough == "Citywide") %>%
+  filter(Age_Group == "All age groups") %>%
+  separate(Date, c("Year", "Hosp_Week"), " wk") %>%
+  mutate(First_Date_in_Year =
+           mdy(paste0("01/01/",Year))) %>%
+  mutate(Day_of_Week_of_First_Date_in_Year =
+           wday(First_Date_in_Year)) %>%
+  mutate(Hosp_Week = as.numeric(Hosp_Week),
+           Count_second_week_as_first_epi_week = as.numeric(Day_of_Week_of_First_Date_in_Year > 4)) %>%
+  mutate(Days_To_Count_For_First_Week_If_in_Epi_year = 7-Day_of_Week_of_First_Date_in_Year ) %>%
+  mutate(Week_Ending_in_Date =  First_Date_in_Year + days(Days_To_Count_For_First_Week_If_in_Epi_year) +
+           weeks(Hosp_Week-1))  %>%
+  mutate(Week_Ending_in_Date = as.Date(Week_Ending_in_Date)) %>%
+  mutate(Hosp_Week = as.numeric(Hosp_Week)) %>%
+  mutate(Adj_Count = str_replace(string = Count,
+              pattern = ',',replacement =  '')) %>%
+  mutate(Adj_Count = as.numeric(Adj_Count)) %>%
+  dplyr::select(Week_Ending_in_Date,
+                Syndrome, Year, Hosp_Week,
+                Count = Adj_Count)
+
+p = ggplot(data = resp_weekly_synd_surveil_clean_data,
+           aes(x = Week_Ending_in_Date,
+               y = Count)) +
+  geom_point() +
+  rahul_man_figure_theme
+p
+write.csv(resp_weekly_synd_surveil_clean_data,
+          file = 
+            "../Generated_Data/weekly_resp_synd_surv_NYC_clean.csv",
+          row.names = FALSE)
+
+
+# p = ggplot(data =
+#              resp_weekly_synd_surveil_clean_data_weeks_2_thru_52,
+#            aes(x = Week_Ending_in_Date,
+#                y = Count)) +
+#   geom_point() +
+#   rahul_man_figure_theme
+# p
+# 
+# write.csv(
+#   resp_weekly_synd_surveil_clean_data_weeks_2_thru_52,
+#   file = 
+#     "../Generated_Data/weekly_resp_synd_surv_NYC_clean_weeks_2_thru_52.csv",
+#           row.names = FALSE)
+resp_weekly_synd_surveil_calib_period =
+  resp_weekly_synd_surveil_clean_data %>%
+  filter(Year < 2020) %>%
+  filter(Hosp_Week <= 21)
+head(resp_weekly_synd_surveil_calib_period)
+p = ggplot(data =
+             resp_weekly_synd_surveil_calib_period,
+           aes(x = Week_Ending_in_Date,
+               y = Count)) +
+  geom_point() +
+  rahul_man_figure_theme
+p
+
+p = ggplot(data =
+             resp_weekly_synd_surveil_calib_period,
+           aes(x = Hosp_Week,
+               y = Count,
+               color = as.factor(Year))) +
+  geom_point() + geom_line(aes(group = as.factor(Year))) +
+  rahul_man_figure_theme
+p
+
+resp_weekly_synd_surveil_calib_period = 
+  resp_weekly_synd_surveil_calib_period %>%
+  dplyr::select(Week_Ending_in_Date,
+                Syndrome,
+                Year,
+                Hosp_Week,
+                Resp_Synd_Surveil_Count = Count)
+
+resp_weekly_synd_surveil_calib_period =
+  resp_weekly_synd_surveil_calib_period[order(resp_weekly_synd_surveil_calib_period$Week_Ending_in_Date),]
+
+
+write.csv(
+  resp_weekly_synd_surveil_calib_period,
+  file = 
+    "../Generated_Data/weekly_resp_synd_surv_NYC_calib_period.csv",
+          row.names = FALSE)
+
+```
+
+
+### Load Flu confirmed cases by county in NY
+```{r}
+raw_flu_confirmed_cases_NY_state =
+  read.csv("../Down_Data/Influenza_Laboratory-Confirmed_Cases_By_County__Beginning_2009-10_Season.csv")
+head(raw_flu_confirmed_cases_NY_state)
+NYC_region_confirmed_cases_NY_state =
+  raw_flu_confirmed_cases_NY_state %>%
+  filter(Region == "NYC") %>%
+  group_by(Week.Ending.Date, CDC.Week) %>%
+  summarize(Count = sum(Count)) %>%
+  as.data.frame() %>%
+  mutate(Week_Ending_in_Date = as.Date(mdy(Week.Ending.Date))) %>%
+  mutate(Year = year(Week_Ending_in_Date)) %>%
+  mutate(CDC_Week = CDC.Week) %>%
+  mutate(Week = CDC_Week)
+  
+head(NYC_region_confirmed_cases_NY_state)
+
+head(NYC_region_confirmed_cases_NY_state)
+
+NYC_county_list = c("Brooklyn", "Kings", "Queens", "Bronx", "Richmond","New York")
+
+p = ggplot(data = NYC_region_confirmed_cases_NY_state,
+           aes(x = Week_Ending_in_Date, y = Count)) +
+  geom_point() +
+  rahul_man_figure_theme
+p
+
+p = ggplot(data = NYC_region_confirmed_cases_NY_state,
+           aes(x = Week, y = Count,
+               color = as.character(Year))) +
+  geom_point() +
+  rahul_man_figure_theme
+p
+
+
+write.csv(
+  NYC_region_confirmed_cases_NY_state,
+  file =
+    "../Generated_Data/confirmed_weekly_flu_cases_NYC_counties.csv",
+  row.names = FALSE)
+
+
+
+NYC_region_confirmed_flucases_NY_state_calib_years = 
+  NYC_region_confirmed_cases_NY_state %>%
+  filter(Year > 2015) %>%
+  filter(Year < 2020) %>%
+  filter(Week < 40) %>%
+  dplyr::select(Week_Ending_in_Date,
+                CDC_Week,
+                Confirmed_Flu_Cases = Count,
+                Year = Year,
+                Week = Week)
+
+p = ggplot(
+  data = NYC_region_confirmed_flucases_NY_state_calib_years,
+  aes(x = Week_Ending_in_Date, y = Confirmed_Flu_Cases)) +
+  geom_point() +
+  rahul_man_figure_theme
+p
+
+p = ggplot(
+  data = NYC_region_confirmed_flucases_NY_state_calib_years,
+  aes(x = Week, y = Confirmed_Flu_Cases,
+      color = as.character(Year))) +
+  geom_point() +
+  rahul_man_figure_theme
+p
+
+NYC_region_confirmed_flucases_NY_state_calib_years =
+  NYC_region_confirmed_flucases_NY_state_calib_years[order(NYC_region_confirmed_flucases_NY_state_calib_years$Week_Ending_in_Date),]
+
+write.csv(NYC_region_confirmed_flucases_NY_state_calib_years,
+  file = 
+    "../Generated_Data/confirmed_weekly_flu_cases_NYC_counties_calib_years.csv",
+  row.names = FALSE)
+```
+
+### Join confirmed flu cases and respiratory syndrome suriveilance data for calibration period
+Calibration Period: Weeks 2-20 from 2016-2019
+
+```{r}
+confirmed_flu_cases_calib =
+  read.csv(
+    file = 
+      "../Generated_Data/confirmed_weekly_flu_cases_NYC_counties_calib_years.csv",
+    header = TRUE, stringsAsFactors = FALSE)
+head(confirmed_flu_cases_calib)
+
+
+resp_weekly_synd_surveil_calib_period =
+  read.csv(
+    file =
+      "../Generated_Data/weekly_resp_synd_surv_NYC_calib_period.csv",
+    header = TRUE, stringsAsFactors = FALSE)
+head(resp_weekly_synd_surveil_calib_period)
+
+calib_period_data = join(resp_weekly_synd_surveil_calib_period,
+                         confirmed_flu_cases_calib)
+
+head(calib_period_data)
+
+#Remove first week of hosp data (may not have 7 full days)
+calib_period_data = calib_period_data %>%
+  filter(Hosp_Week > 1) %>%
+  filter(Hosp_Week < 21) %>%
+  filter(Year != 2018)
+
+
+no_flu_cases_dates = calib_period_data %>%
+  filter(is.na(Confirmed_Flu_Cases) == TRUE)
+
+
+p = ggplot(data = calib_period_data,
+           aes(x = Confirmed_Flu_Cases,
+               y = Resp_Synd_Surveil_Count)) +
+  geom_point() + rahul_man_figure_theme
+p
+
+p = ggplot(data = calib_period_data,
+           aes(x = Confirmed_Flu_Cases,
+               y = Resp_Synd_Surveil_Count,
+               color = as.factor(Year))) +
+  geom_point() + rahul_man_figure_theme
+p
+```
+
+There were 2962 resp syndrome reports during the first week of January 2016. This is much lower than all other dates in this period.
+For comparison, 9,555 reports were obtained in the next week.
+The first week is about 31% of the second week.
+This makes sense if the reporitng period for the first week is only from Jan 1st (Friday) to Jan 2nd, 2016 (Saturday), about 28.6% of the size of a regular week.
+Therefore, we will record the resp reports as occruing on the raw week (not CDC adjusted week) and ignore the first week's reports for comparison.
+
+You can see this in the plots of the first week of every year-all except 2017 are lower than the following week, and 2017's first day was on a Sunday. 
+
+## Linear Reggresion of Respriotiry Syndrome Surveillance Reports with Confirmed Flu Cases
+
+```{r}
+lm_resp_weekly_vs_flu_calib =
+  lm(calib_period_data$Resp_Synd_Surveil_Count ~
+       calib_period_data$Confirmed_Flu_Cases)
+summary(lm_resp_weekly_vs_flu_calib)
+lm_coef = lm_resp_weekly_vs_flu_calib$coefficients
+
+resp_synd_reports_per_flu_case =
+  lm_coef['calib_period_data$Confirmed_Flu_Cases'] %>%
+  as.numeric()
+baseline_resp_with_no_flu = lm_coef['(Intercept)'] %>%
+  as.numeric()
+
+prop_of_var_in_resp_explained_by_flu =
+  summary(lm_resp_weekly_vs_flu_calib)$adj.r.squared 
+
+resp_synd_reports_per_flu_case
+baseline_resp_with_no_flu
+
+prop_of_var_in_resp_explained_by_flu
+
+```
+
+
+Plot data overlaid with best fit line
+```{r}
+small_breaks_flu_cases =
+  seq(from =
+        min(calib_period_data$Confirmed_Flu_Cases),
+      to = max(calib_period_data$Confirmed_Flu_Cases),
+      length = 10^3)
+
+flu_linear_curve = baseline_resp_with_no_flu +
+  resp_synd_reports_per_flu_case*small_breaks_flu_cases 
+
+flu_linear_curve_df = data.frame(
+  small_breaks = small_breaks_flu_cases,
+  poly_curve = flu_linear_curve,
+  plot_var_label = "flu_cases")
+
+plot_label = paste0(" S = ",
+               round(
+                 resp_synd_reports_per_flu_case,
+                 digits = 2),
+               " F + ",
+               round(
+                 baseline_resp_with_no_flu,
+                 digits = 2),
+               " \n R^2 = ",
+               round(
+                 prop_of_var_in_resp_explained_by_flu,
+                 digits = 2)
+               )
+p = ggplot()  +
+  geom_point(data = calib_period_data,
+           aes(x = Confirmed_Flu_Cases,
+               y = Resp_Synd_Surveil_Count)) +
+  scale_linetype_manual(values = c("blank", "solid")) +
+  rahul_man_figure_theme +
+  theme_white_background +
+  geom_line(data = flu_linear_curve_df,
+            aes(x = small_breaks, y = poly_curve),
+            color = 'red', show.legend = F) +
+  scale_x_continuous(
+    breaks = scales::pretty_breaks(n = 3)) +
+  theme(
+    aspect.ratio = 1,
+    strip.background = element_blank(),
+    strip.placement = "outside"
+  ) + 
+  theme(legend.position = "None") +
+  annotate(geom="text", x=2300, y=15500, label=plot_label,
+              color="black")
+p
+png("../Figures/Resp_syndrome_surveillance_vs_flu_cases_weeks_2_to_20_2016_thru_2019.png")
+print(p)
+dev.off()
+  
+
+
+
+```
+
+### Residual Analysis
+```{r}
+residuals_from_removing_flu_effect = 
+    lm_resp_weekly_vs_flu_calib$residuals
+calib_period_data = calib_period_data %>%
+  mutate(residuals_from_removing_flu_effect = residuals_from_removing_flu_effect)
+head(calib_period_data)
+
+p = ggplot(data = calib_period_data,
+           aes(x = as.Date(Week_Ending_in_Date),
+               y = residuals_from_removing_flu_effect)) +
+  geom_point() +
+  rahul_man_figure_theme
+p
+
+p = ggplot(data = calib_period_data,
+           aes(x = Week,
+               y = residuals_from_removing_flu_effect,
+               color = as.factor(Year))) +
+  geom_point() +
+  rahul_man_figure_theme
+p
+resid_2016_only = calib_period_data %>%
+  filter(Year == 2016)
+acf(resid_2016_only$residuals_from_removing_flu_effect)
+
+resid_2017_only = calib_period_data %>%
+  filter(Year == 2017)
+acf(resid_2017_only$residuals_from_removing_flu_effect)
+
+
+
+
+```
+
+### Polynomial Fit to Residuals
+```{r}
+
+resid_poly_fit_model <- lm(
+  calib_period_data$residuals_from_removing_flu_effect ~ poly(
+    calib_period_data$Week,3, raw = TRUE))
+summary(resid_poly_fit_model)
+
+
+calib_period_data$Poly_Fit =
+  resid_poly_fit_model$fitted.values
+
+small_breaks_week = seq(
+  from= min(calib_period_data$Week),
+  to = max(calib_period_data$Week),
+  length = 10^3)
+
+resid_poly_intercept =summary(
+  resid_poly_fit_model)$coefficients[1,1]
+
+resid_poly_order_1 = summary(
+  resid_poly_fit_model)$coefficients[2,1]
+
+resid_poly_order_2 = summary(
+  resid_poly_fit_model)$coefficients[3,1]
+
+resid_poly_order_3 = summary(
+  resid_poly_fit_model)$coefficients[4,1]
+
+prop_of_var_in_resid_explained_by_poly =
+  summary(resid_poly_fit_model)$adj.r.squared 
+
+
+resid_poly_curve = resid_poly_intercept +
+  resid_poly_order_1*small_breaks_week +
+  resid_poly_order_2*I(small_breaks_week^2) +
+  resid_poly_order_3*I(small_breaks_week^3)
+  
+resid_poly_curve_df = data.frame(
+  small_breaks = small_breaks_week,
+  resid_poly_curve = resid_poly_curve)
+
+
+
+resid_poly_plot_label = paste0(" resid = ",
+                               round(
+                 resid_poly_order_3,
+                 digits = 2),
+               " Week^3 + \n ",
+                    round(
+                 resid_poly_order_2,
+                 digits = 2),
+               " Week^2 + \n ",
+               round(
+                 resid_poly_order_1,
+                 digits = 2),
+               " Week + \n ",
+               round(
+                 resid_poly_intercept,
+                 digits = 2),
+               " \n R^2 = ",
+               round(
+                 prop_of_var_in_resid_explained_by_poly,
+                 digits = 2)
+               )
+
+
+p = ggplot() +
+  geom_point(data = calib_period_data,
+           aes(x = Week,
+               y = residuals_from_removing_flu_effect)) +
+  geom_line(data = resid_poly_curve_df,
+            aes(x = small_breaks_week,
+                y = resid_poly_curve),
+            color = 'red', show.legend = F) +
+  rahul_man_figure_theme +
+  theme_white_background +
+  scale_x_continuous(
+    breaks = scales::pretty_breaks(n = 3)) +
+  theme(
+    aspect.ratio = 1,
+    strip.background = element_blank(),
+    strip.placement = "outside"
+  ) + 
+  theme(legend.position = "None") +
+  annotate(geom="text", x=12, y=2000,
+           label=resid_poly_plot_label,
+              color="black")
+p
+png("../Figures/Resp_syndrome_surveillance_vs_flu_cases_weeks_2_to_20_poly_fit_of_residuals.png")
+print(p)
+dev.off()
+  
+p
+
+
+```
+
+### Plot residuals
+```{r}
+residuals_from_removing_resid_poly = 
+    resid_poly_fit_model$residuals
+calib_period_data = calib_period_data %>%
+  mutate(residuals_from_removing_resid_poly = residuals_from_removing_resid_poly)
+head(calib_period_data)
+
+p = ggplot(data = calib_period_data,
+           aes(x = Week,
+               y = residuals_from_removing_resid_poly)) +
+  geom_point() +
+  rahul_man_figure_theme
+p
+
+p = ggplot(data = calib_period_data,
+           aes(x = Week,
+               y = residuals_from_removing_resid_poly,
+               color = as.factor(Year))) +
+  geom_point() +
+  rahul_man_figure_theme
+p
+
+```
+
+```{r}
+qqnorm(calib_period_data$residuals_from_removing_resid_poly, pch = 1, frame = FALSE)
+qqline(calib_period_data$residuals_from_removing_resid_poly, col = "steelblue", lwd = 2)
+```
+
+```{r}
+mean_resid = mean(calib_period_data$residuals_from_removing_resid_poly)
+sd_resid = sd(calib_period_data$residuals_from_removing_resid_poly)
+mean_resid
+sd_resid
+
+residual_standard_eror = sqrt(deviance(resid_poly_fit_model)/df.residual(resid_poly_fit_model))
+
+sigma_epsilon = residual_standard_eror
+sigma_epsilon
+
+```
+
+### Model Equation
+Let $G(w)$ be the number of non-COVID respiratory syndrome cases presenting in the ED of hosptials in NYC in week $w$ of year $y$.
+
+\begin{equation}
+G(w) = g_0 + g_{\text{F}} F(w,y) + \beta_{\text{w}^2}w^2 + \beta_{\text{w}^1}w + \beta_{\text{w}^0} + \epsilon 
+\end{equation}
+
+where $F(w,y)$ is the number of confirmed flu cases in NYC, and:
+
+\begin{equation}
+\epsilon \sim rnorm(0,\sigma_{\epsilon})
+\end{equation}
+ 
+ Values of other model coefficients:
+```{r}
+g_F = resp_synd_reports_per_flu_case 
+g_0 = baseline_resp_with_no_flu 
+
+Beta_w_3 = resid_poly_order_3
+
+Beta_w_2 = resid_poly_order_2
+Beta_w_1 = resid_poly_order_1
+Beta_w_0 = resid_poly_intercept
+
+g_F
+g_0
+Beta_w_3
+Beta_w_2
+Beta_w_1
+Beta_w_0
+sigma_epsilon
+
+fitted_NC_model_params = data.frame(g_F = g_F, g_0 =g_0,
+                                    Beta_w_3 = Beta_w_3,
+                                    Beta_w_2 = Beta_w_2,
+                                    Beta_w_1 = Beta_w_1,
+                                    Beta_w_0 = Beta_w_0,
+                                    sigma_epsilon = sigma_epsilon)
+write.csv(fitted_NC_model_params,
+          file = "../Generated_Data/fitted_NC_model_params.csv",
+          append = FALSE,
+          row.names = FALSE)
+
+```
+ 
+# Projection from Fitted Model for 2020
+
+### Get F(w) for 2020
+```{r}
+NYC_region_confirmed_flucases_NY_state_2020 = 
+  NYC_region_confirmed_cases_NY_state %>%
+  filter(Year == 2020) %>%
+  filter(Week < 21) %>%
+  filter(Week > 1) %>%
+  dplyr::select(Week_Ending_in_Date,
+                CDC_Week,
+                Confirmed_Flu_Cases = Count,
+                Year = Year,
+                Week = Week)
+```
+
+### Project forward in time
+```{r}
+w_pred = seq(from = 2, to = 15, by = 1)
+G_w_2020_pred = g_0 +
+  g_F*NYC_region_confirmed_flucases_NY_state_2020$Confirmed_Flu_Cases + Beta_w_3*w_pred^3 + Beta_w_2*w_pred^2 + Beta_w_1*w_pred 
+G_w_2020_pred = G_w_2020_pred +  Beta_w_0
+
+G_w_2020_pred_df = data.frame(G_w_2020_pred,
+                              w_pred)
+p = ggplot(data = G_w_2020_pred_df,
+           aes(x = w_pred,
+               y = G_w_2020_pred)) +
+  geom_point() + geom_line() +
+  rahul_man_figure_theme +
+  theme_white_background
+p
+
+```
+
+### Get real data for early 2020
+```{r}
+resp_weekly_synd_surveil_2020 =
+  resp_weekly_synd_surveil_clean_data %>%
+  filter(Year == 2020) %>%
+  filter(Hosp_Week <= 20) %>%
+  filter(Hosp_Week > 1) 
+head(resp_weekly_synd_surveil_2020)
+
+resp_weekly_synd_surveil_validation_period = 
+  resp_weekly_synd_surveil_2020 %>%
+  filter(Hosp_Week <=15) %>%
+  dplyr::select(Week = Hosp_Week,
+                Week_Ending_in_Date,
+                Actual_Resp_Count = Count) %>%
+  mutate(Week = as.numeric(Week))
+
+validation_comp_df = G_w_2020_pred_df %>%
+  dplyr::select(Week = w_pred,
+                G_w_2020_pred) %>%
+  join(resp_weekly_synd_surveil_validation_period) 
+
+validation_comp_melt_df = validation_comp_df %>%
+  melt(id.vars = c("Week", "Week_Ending_in_Date")) 
+
+p = ggplot(data = validation_comp_melt_df,
+           aes(x = Week, y = value,
+               color = variable)) +
+  geom_point() +
+  geom_line(aes(group = variable)) +
+  rahul_man_figure_theme +
+  theme_white_background
+p
+
+p = ggplot(data = validation_comp_melt_df,
+           aes(x = Week_Ending_in_Date, y = value,
+               color = variable)) +
+  geom_point() +
+  geom_line(aes(group = variable)) +
+  rahul_man_figure_theme +
+  theme_white_background
+p
+  
+
+```
+
+```{r}
+sim_data_G = data.frame(matrix(nrow = 0, ncol = 4)) 
+sim_data_G_colnames = c("Sim", 
+                        "Week",
+                        "Week_Ending_in_Date",
+                        "G_w_2020_pred")
+colnames(sim_data_G) = sim_data_G_colnames
+w_pred = seq(from = 2, to = 15, by = 1)
+Week_Ending_Date_list = unique(validation_comp_df$Week_Ending_in_Date)
+N_sim = 100
+for(sim_index in seq(1:N_sim)){
+  single_sim_df = data.frame(matrix(
+    nrow = length(Week_Ending_Date_list),
+    ncol = 4))
+  colnames(single_sim_df) = sim_data_G_colnames
+  single_sim_df$Week = seq(from = 2, to = 15, by = 1)
+  single_sim_df$Week_Ending_in_Date =
+    unique(validation_comp_df$Week_Ending_in_Date)
+  single_sim_df$Sim = sim_index
+  single_sim_df$G_w_2020_pred = g_0 +
+    g_F*NYC_region_confirmed_flucases_NY_state_2020$Confirmed_Flu_Cases +Beta_w_3*w_pred^3 +
+    Beta_w_2*w_pred^2 + Beta_w_1*w_pred 
+  single_sim_df$G_w_2020_pred =
+    single_sim_df$G_w_2020_pred +
+    Beta_w_0
+   single_sim_df$G_w_2020_pred =
+     single_sim_df$G_w_2020_pred +
+     rnorm(n = 1,
+           mean = 0, sd = sigma_epsilon)
+   sim_data_G = rbind(sim_data_G, single_sim_df)
+}
+head(sim_data_G)
+
+sim_data_G_summary = sim_data_G %>%
+  group_by(Week, Week_Ending_in_Date) %>%
+  summarize(G_w_pred_2020_mean =
+              mean(G_w_2020_pred),
+            G_w_pred_2020_upper_CI =
+              quantile(G_w_2020_pred, 0.975),
+            G_w_pred_2020_lower_CI =
+              quantile(G_w_2020_pred, 0.025))
+sim_start_date = as.Date("2020-03-01")
+true_quarantine_start_time = as.Date("2020-03-18")
+p = ggplot() +
+  geom_ribbon(data = sim_data_G_summary,
+              aes(x = Week_Ending_in_Date,
+    ymin =G_w_pred_2020_lower_CI,
+                  ymax = G_w_pred_2020_upper_CI),
+              fill = 'blue', alpha = 0.5)+
+  geom_point(data = sim_data_G_summary,
+             aes(x = Week_Ending_in_Date,
+               y = G_w_pred_2020_mean),
+             color = 'blue') +
+  geom_line(data = sim_data_G_summary,
+            aes(x = Week_Ending_in_Date,
+               y = G_w_pred_2020_mean),
+            color = 'blue') +
+  geom_line(data = validation_comp_df,
+            aes(x = Week_Ending_in_Date,
+                y = Actual_Resp_Count),
+            color = 'red') +
+  geom_point(data = validation_comp_df,
+             aes(x = Week_Ending_in_Date,
+                y = Actual_Resp_Count),
+             color = 'red') +
+  rahul_man_figure_theme +
+  geom_vline(xintercept = sim_start_date, color = 'orange') +
+  geom_vline(xintercept = true_quarantine_start_time, color = 'blue') +
+  theme_white_background
+p
+png("../Figures/resp_reports_2020.png")
+print(p)
+dev.off()
+           
+write.csv(sim_data_G,
+     file = "../Generated_Data/simulated_non_COVID_data.csv",
+     append = FALSE,
+     row.names = FALSE)
+
+write.csv(NYC_region_confirmed_flucases_NY_state_2020,
+          file = "../Generated_Data/NYC_region_confirmed_flucases_NY_state_2020.csv",
+          row.names = FALSE)
+```
+
+### Get estimated COVID-related syndrome surveilance
+```{r}
+head(validation_comp_df)
+potential_COVID_resp = validation_comp_df %>%
+   mutate(COVID_resp_cases = Actual_Resp_Count - G_w_2020_pred)
+potential_COVID_resp
+p = ggplot(data = potential_COVID_resp,
+           aes(x = Week_Ending_in_Date,
+                y = COVID_resp_cases)) +
+  geom_point() + geom_line() + rahul_man_figure_theme
+p
+```
+
+#Strategy
+Do lin reg of flu confirmed cases vs resp and ILI for 2016-2019
+Take residual to get non flu cases Hopefully stationary 
+(If stationary, take mean and var over study period)
+The non-flu non COVID we assume are same in 2020
+Now, to get flu from this, use flu confirmed cases
+during study period and multiply by estmated coefficient from 
+linear regression. 
+Then you have an estimate of both flu and non-flu non-COVID cases over the study period.

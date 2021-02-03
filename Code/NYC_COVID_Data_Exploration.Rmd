@@ -1,0 +1,500 @@
+---
+title: "NYC_COVID_Data_Exploration"
+author: "Rahul Subramanian"
+date: "4/26/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Load Libraries
+
+```{r load_lib}
+rm(list = ls())
+library(plyr)
+library(tidyverse)
+library(magrittr)
+library(tibble)
+library(stringi)
+library(pomp)
+library(xtable)
+source("load_libraries_essential.R")
+#library(panelPomp)
+#library(foreach)
+#library(iterators)
+#library(doRNG)
+#library(aakmisc) ## available at https://kingaa.github.io/
+stopifnot(packageVersion("pomp")>="2.2")
+#stopifnot(packageVersion("panelPomp")>="0.9.1")
+#stopifnot(packageVersion("aakmisc")>="0.26.2")
+options(
+  stringsAsFactors=FALSE,
+  keep.source=TRUE,
+  encoding="UTF-8"
+)
+set.seed(407958184)
+source("rahul_theme.R")
+```
+
+## Load Raw Data
+```{r}
+boros_raw = read.csv(file = "../Down_Data/boro.csv")
+head(boros_raw)
+by_age_raw = read.csv(file = "../Down_Data/by-age.csv")
+head(by_age_raw)
+by_sex_raw = read.csv(file = "../Down_Data/by-sex.csv")
+head(by_sex_raw)
+case_hosp_death_raw = read.csv(file = "../Down_Data/case-hosp-death.csv")
+head(case_hosp_death_raw)
+
+probable_confirmed_dod_raw =
+  read.csv(file = "../Down_Data/probable-confirmed-dod.csv")
+head(probable_confirmed_dod_raw)
+summary_raw = read.csv(file = "../Down_Data/summary.csv")
+head(summary_raw)
+tests_by_zcta_raw = read.csv(file = "../Down_Data/tests-by-zcta.csv")
+head(tests_by_zcta_raw)
+nrow(tests_by_zcta_raw)
+
+testing_raw = read.csv(file = "../Down_Data/testing.csv")
+head(testing_raw)
+
+
+```
+Note: The file testing.csv was not on the current version of the NYC
+ git repo, but an older commit:
+ 
+ https://github.com/nychealth/coronavirus-data/blob/6968ca6f4a23c04f9a51ec2e3b161c41cd437bdb/testing.csv
+
+
+ Download link: https://raw.githubusercontent.com/nychealth/coronavirus-data/6968ca6f4a23c04f9a51ec2e3b161c41cd437bdb/testing.csv
+
+### Read in NY State Testing Raw Data
+```{r}
+NY_state_raw_testing_data = read.csv("../Down_Data/New_York_State_Statewide_COVID-19_Testing.csv")
+head(NY_state_raw_testing_data)
+```
+
+## PCR Testing Protocol Details
+Assume that it takes 2 days for PCR testing results to be complete
+-Recorded as infected 
+-Need ot check if recorded as infected on day of sampling or day of evaluation
+-No "queue" in that sense-either tested 
+-We ahve total number of tests 
+
+-If tested poistive, re-test after 14 days (symptomatic and asymptoamtic) or
+14 days post-leaving hospital (hospitalized individuals)
+Re-test negative twice (2nd test is 24 hours after 1st test)
+
+## Types of Infection classes
+Hospitalized
+Symptomatic With Testable Cases
+
+## Estimation of ratio of I_C to I_H
+From testing.csv file
+
+```{r}
+head(testing_raw)
+Start_Date_index = as.Date("01/01/2020", "%m/%d/%Y")
+
+testing_case_df = testing_raw %>%
+  mutate(num_clinical_non_hosp = Number_confirmed - Number_hospitalized) %>%
+  mutate(prop_clinical_non_hosp = num_clinical_non_hosp/Number_confirmed) %>%
+  separate(col = specimen_date, into = c("Month", "Day", "Year"),
+           sep = "/", remove = FALSE)%>%
+  mutate(Date = Start_Date_index +
+           months(as.numeric(Month)-1) +
+           days(as.numeric(Day)))
+
+
+
+
+date_of_NY_testing_rec = as.Date("03/20/2020", "%m/%d/%Y")
+date_of_NY_testing_rec_with_delay = date_of_NY_testing_rec + days(2)
+one_week_after_testing_rec = date_of_NY_testing_rec_with_delay + weeks(1)
+testing_during_rec_period = testing_case_df %>%
+  filter(Date > date_of_NY_testing_rec) %>%
+  filter(Date <= one_week_after_testing_rec)
+mean_prop_non_hosp_cases_tested =
+  mean(testing_during_rec_period$prop_clinical_non_hosp)
+
+p = ggplot(data = testing_case_df,
+           aes(x = Date, y = prop_clinical_non_hosp)) + 
+  geom_point()  +  geom_hline(yintercept = mean_prop_non_hosp_cases_tested,
+                            color = "blue")
+  rahul_theme
+p
+
+
+p = ggplot(data = testing_during_rec_period,
+           aes(x = Date, y = prop_clinical_non_hosp)) + 
+  geom_point() + geom_hline(yintercept = mean_prop_non_hosp_cases_tested,
+                            color = "blue")
+  rahul_theme
+p
+
+mean_prop_non_hosp_cases_tested
+
+p_H_cond_T = 1- mean_prop_non_hosp_cases_tested
+p_H_cond_T
+
+
+```
+
+## PCR Positive Rate analysis
+### NY State testing Data
+```{r}
+head(NY_state_raw_testing_data)
+NYC_county_list = c("Brooklyn", "Kings", "Queens", "Bronx", "Richmond",
+                    "New York")
+NYC_Counties_full_testing_data = NY_state_raw_testing_data %>%
+  filter(County %in% NYC_county_list)
+NYC_Counties_full_testing_data
+
+NYC_full_testing_data = NYC_Counties_full_testing_data %>%
+  group_by(Test.Date) %>%
+  summarize(New_Positives = sum(New.Positives),
+            Cumulative_Number_of_Positives =
+              sum(Cumulative.Number.of.Positives),
+            Total_Number_of_Tests_Performed = 
+              sum(Total.Number.of.Tests.Performed),
+            Cumulative_Number_of_Tests_Performed =
+              sum(Cumulative.Number.of.Tests.Performed)) %>%
+  as.data.frame()
+
+head(NYC_full_testing_data)
+NYC_full_testing_data = NYC_full_testing_data %>%
+  mutate(Prop_Pos = New_Positives/Total_Number_of_Tests_Performed)
+NYC_full_testing_data = NYC_full_testing_data %>%
+  mutate(Not_Pos = Total_Number_of_Tests_Performed - New_Positives,
+         Date = as.Date(Test.Date, "%m/%d/%Y"))
+
+p = ggplot(data = NYC_full_testing_data,
+           aes(x = Date, y = Prop_Pos)) + geom_point() +
+  rahul_theme
+p
+
+p = ggplot(data = NYC_full_testing_data,
+           aes(x = Date, y = Not_Pos)) + geom_point() +
+  rahul_theme
+p
+
+p = ggplot(data = NYC_full_testing_data,
+           aes(x = Date, y = log(Not_Pos))) + geom_point() +
+  rahul_theme
+p
+
+write.csv(NYC_full_testing_data,
+          file = "../Generated_Data/NYC_full_testing_data.csv",
+          row.names = FALSE)
+
+```
+
+```{r}
+
+NYC_full_testing_data_during_rec_period = NYC_full_testing_data %>%
+  filter(Date > date_of_NY_testing_rec_with_delay) %>%
+  filter(Date <= one_week_after_testing_rec)
+
+mean_non_positive_COVID_cases_during_rec_period = mean(NYC_full_testing_data_during_rec_period$Not_Pos)
+
+sd_non_positive_COVID_cases_during_rec_period = sd(NYC_full_testing_data_during_rec_period$Not_Pos)
+
+NYC_full_testing_data_during_rec_period = 
+  NYC_full_testing_data_during_rec_period %>%
+  mutate(upper_CI_non_positive_COVID_cases_during_rec_period =
+  mean_non_positive_COVID_cases_during_rec_period +
+  2*sd_non_positive_COVID_cases_during_rec_period)
+
+NYC_full_testing_data_during_rec_period =
+  NYC_full_testing_data_during_rec_period %>%
+  mutate(lower_CI_non_positive_COVID_cases_during_rec_period =
+  mean_non_positive_COVID_cases_during_rec_period -
+  2*sd_non_positive_COVID_cases_during_rec_period)
+
+
+p = ggplot(data = NYC_full_testing_data_during_rec_period,
+           aes(x = Date, y = Not_Pos)) +
+  geom_ribbon(aes(ymin = lower_CI_non_positive_COVID_cases_during_rec_period,
+              ymax = upper_CI_non_positive_COVID_cases_during_rec_period),
+              alpha = 0.25,
+              fill = 'skyblue') +
+  geom_point() +
+  geom_hline(yintercept = mean_non_positive_COVID_cases_during_rec_period,
+             color = 'blue') 
+  rahul_theme
+p
+
+NYC_full_testing_data = 
+  NYC_full_testing_data %>%
+  mutate(upper_CI_non_positive_COVID_cases_during_rec_period =
+  mean_non_positive_COVID_cases_during_rec_period +
+  2*sd_non_positive_COVID_cases_during_rec_period)
+
+NYC_full_testing_data =
+  NYC_full_testing_data %>%
+  mutate(lower_CI_non_positive_COVID_cases_during_rec_period =
+  mean_non_positive_COVID_cases_during_rec_period -
+  2*sd_non_positive_COVID_cases_during_rec_period)
+
+
+p = ggplot(data = NYC_full_testing_data,
+           aes(x = Date, y = Not_Pos)) +
+  geom_ribbon(aes(ymin = lower_CI_non_positive_COVID_cases_during_rec_period,
+              ymax = upper_CI_non_positive_COVID_cases_during_rec_period),
+              alpha = 0.25,
+              fill = 'skyblue') +
+  geom_point() +
+  rahul_theme + geom_hline(yintercept = mean_non_positive_COVID_cases_during_rec_period,
+             color = 'blue')
+p
+
+
+mean_non_positive_COVID_cases_during_rec_period
+
+```
+
+### Correct for False Negatives
+```{r}
+PCR_sens = 0.90
+NYC_full_testing_data = 
+  NYC_full_testing_data %>%
+  mutate(Est_Total_True_Positive =  New_Positives/PCR_sens)
+NYC_full_testing_data = 
+  NYC_full_testing_data %>%
+  mutate(Est_Total_True_Non_Positive =  Total_Number_of_Tests_Performed - Est_Total_True_Positive)
+
+p = ggplot(data = NYC_full_testing_data,
+           aes(x = Date, y = Est_Total_True_Positive)) +
+  geom_point() +
+  rahul_theme 
+p
+
+p = ggplot(data = NYC_full_testing_data,
+           aes(x = Date, y = Est_Total_True_Non_Positive)) +
+  geom_point() +
+  rahul_theme 
+p
+
+NYC_full_testing_data_during_rec_period = NYC_full_testing_data %>%
+  filter(Date > date_of_NY_testing_rec_with_delay) %>%
+  filter(Date <= one_week_after_testing_rec)
+
+mean_est_true_non_positive_COVID_cases_during_rec_period = mean(NYC_full_testing_data_during_rec_period$Est_Total_True_Non_Positive)
+
+sd_est_true_non_positive_COVID_cases_during_rec_period = sd(NYC_full_testing_data_during_rec_period$Est_Total_True_Non_Positive)
+
+NYC_full_testing_data_during_rec_period = 
+  NYC_full_testing_data_during_rec_period %>%
+  mutate(upper_CI_est_true_non_positive_COVID_cases_during_rec_period =
+  mean_est_true_non_positive_COVID_cases_during_rec_period +
+  2*sd_est_true_non_positive_COVID_cases_during_rec_period)
+
+NYC_full_testing_data_during_rec_period =
+  NYC_full_testing_data_during_rec_period %>%
+  mutate(lower_CI_est_true_non_positive_COVID_cases_during_rec_period =
+  mean_est_true_non_positive_COVID_cases_during_rec_period -
+  2*sd_est_true_non_positive_COVID_cases_during_rec_period)
+as.numeric(quantile(NYC_full_testing_data_during_rec_period$Est_Total_True_Non_Positive, 0.95))
+p = ggplot(data = NYC_full_testing_data_during_rec_period,
+           aes(x = Date, y = Est_Total_True_Non_Positive)) +
+  geom_ribbon(aes(
+    ymin = lower_CI_est_true_non_positive_COVID_cases_during_rec_period,
+    ymax = upper_CI_est_true_non_positive_COVID_cases_during_rec_period),
+              alpha = 0.25,
+              fill = 'skyblue') +
+  geom_point() +
+  geom_hline(yintercept =
+               mean_est_true_non_positive_COVID_cases_during_rec_period,
+             color = 'blue') 
+  rahul_theme
+p
+
+NYC_full_testing_data = 
+  NYC_full_testing_data %>%
+  mutate(upper_CI_est_true_non_positive_COVID_cases_during_rec_period =
+  mean_est_true_non_positive_COVID_cases_during_rec_period +
+  2*sd_est_true_non_positive_COVID_cases_during_rec_period)
+
+NYC_full_testing_data =
+  NYC_full_testing_data %>%
+  mutate(lower_CI_est_true_non_positive_COVID_cases_during_rec_period =
+  mean_est_true_non_positive_COVID_cases_during_rec_period -
+  2*sd_est_true_non_positive_COVID_cases_during_rec_period)
+
+p = ggplot(data = NYC_full_testing_data,
+           aes(x = Date, y = Est_Total_True_Non_Positive)) +
+  geom_ribbon(aes(
+    ymin = lower_CI_est_true_non_positive_COVID_cases_during_rec_period,
+    ymax = upper_CI_est_true_non_positive_COVID_cases_during_rec_period),
+              alpha = 0.25,
+              fill = 'skyblue') +
+  geom_point() +
+  rahul_theme + geom_hline(yintercept = mean_est_true_non_positive_COVID_cases_during_rec_period,
+             color = 'blue')
+p
+true_neg_hosp_upper_bound = unique(NYC_full_testing_data$upper_CI_est_true_non_positive_COVID_cases_during_rec_period)
+true_neg_hosp_upper_bound
+
+```
+
+
+### Repeat calculation using NYC city data file
+```{r}
+
+testing_during_rec_period = testing_during_rec_period %>%
+  mutate(Number_not_confirmed = Number_tested - Number_confirmed)
+p
+mean_number_not_confirmed_during_rec_period =
+  mean(testing_during_rec_period$Number_not_confirmed)
+p = ggplot(data = testing_during_rec_period,
+           aes(x = Date, y = Number_not_confirmed)) + 
+  geom_point() + geom_hline(yintercept = mean_number_not_confirmed_during_rec_period,
+                            color = "blue")
+  rahul_theme
+p
+mean_number_not_confirmed_during_rec_period
+```
+
+## Total Testing Calibration
+The testing.csv file has only a subset of the total tests done
+```{r}
+#Estimate of average total tests during rec period according to testing.csv file
+mean(testing_during_rec_period$Number_tested)
+
+##Estimate of average total tests during rec period according to NY state database
+ mean(NYC_full_testing_data_during_rec_period$Total_Number_of_Tests_Performed)
+
+```
+
+## Total Positive Cases Calibration
+```{r}
+head(case_hosp_death_raw)
+case_hosp_death_df = case_hosp_death_raw%>%
+  separate(col = DATE_OF_INTEREST, into = c("Month", "Day", "Year"),
+           sep = "/", remove = FALSE)%>%
+  mutate(Date = Start_Date_index +
+           months(as.numeric(Month)-1) +
+           days(as.numeric(Day)))
+case_hosp_death_during_rec_week = case_hosp_death_df %>%
+  filter(Date > date_of_NY_testing_rec_with_delay) %>%
+  filter(Date <= one_week_after_testing_rec)
+
+total_cases_during_rec_week_from_case_hosp_death = sum(case_hosp_death_during_rec_week$NEW_COVID_CASE_COUNT)
+total_cases_during_rec_week_from_case_hosp_death
+
+total_positive_tests_from_NY_State_data_during_rec_week =
+  sum(NYC_full_testing_data_during_rec_period$New_Positives)
+total_positive_tests_from_NY_State_data_during_rec_week  
+
+total_positive_tests_from_testing_csv_file =
+  sum(testing_during_rec_period$Number_confirmed)
+total_positive_tests_from_testing_csv_file
+```
+
+## Combined plot of cases from different sources
+
+```{r}
+
+ head(case_hosp_death_df)
+case_hosp_death_rel = case_hosp_death_df %>%
+  dplyr::select(Date, NYC_City_DB = NEW_COVID_CASE_COUNT)
+
+head(NYC_full_testing_data)
+NY_state_data_cases = NYC_full_testing_data %>%
+  dplyr::select(Date, NY_State_DB_NYC = New_Positives)
+NYC_testing_csv_file_cases = testing_case_df %>%
+  dplyr::select(Date, NYC_test_csv = Number_confirmed)
+
+combined_case_comp_df = join(case_hosp_death_rel,
+                             NY_state_data_cases)
+combined_case_comp_df = join(combined_case_comp_df,
+                             NYC_testing_csv_file_cases)
+combined_case_comp_melt_df = melt(combined_case_comp_df,
+                                  id.vars = c("Date"),
+                                  value.name = "Cases")
+p = ggplot(data = combined_case_comp_melt_df,
+           aes(x = Date, y = Cases, color = variable)) + geom_point() +
+  geom_line(aes(group = variable)) + rahul_man_figure_theme +
+  scale_color_viridis_d(name = "Data Source")
+p
+```
+
+##Lag comparison of cases
+```{r}
+case_hosp_death_df = case_hosp_death_df %>%
+  mutate(lagged_testing_date = Date + days(2))
+
+lag_comp_case_hosp_death_df = case_hosp_death_df %>%
+  dplyr::select(Date = lagged_testing_date,
+                NYC_City_DB_lag = NEW_COVID_CASE_COUNT)
+lag_comp_case_df = join(lag_comp_case_hosp_death_df,
+                        NY_state_data_cases)
+
+lag_comp_case_melt_df = melt(lag_comp_case_df,
+                                  id.vars = c("Date"),
+                                  value.name = "Cases")
+p = ggplot(data = lag_comp_case_melt_df,
+           aes(x = Date, y = Cases, color = variable)) + geom_point() +
+  geom_line(aes(group = variable)) + rahul_man_figure_theme +
+  scale_color_manual(name = "Data Source", values = c("red", "blue"))
+p
+```
+
+### Estimated Testing Capcity in NYC
+According to NY State health department testing database
+```{r}
+p = ggplot(data = NYC_full_testing_data,
+           aes(x = Date, y = Total_Number_of_Tests_Performed)) + geom_point() +
+  geom_line() + rahul_man_figure_theme +
+  scale_color_viridis_d(name = "Data Source")
+p
+```
+
+### Smooth by week
+```{r}
+weekend_days = c("Sat", "Sun")
+
+NYC_full_testing_data = NYC_full_testing_data %>%
+  mutate(Week = week(Date),
+         Day_of_Week = wday(Date, label = TRUE)) %>%
+  mutate(Weekend = Day_of_Week %in% weekend_days)
+
+
+p = ggplot(data = NYC_full_testing_data,
+           aes(x = Date, y = New_Positives)) +
+  geom_point(aes(color = Weekend)) +
+  geom_line() + rahul_man_figure_theme +
+  scale_color_manual(name = "Day of Week", 
+                     labels = c("Weekday", "Weekend"),
+                     values = c("red", "blue"))
+p
+
+p = ggplot(data = NYC_full_testing_data,
+           aes(x = Date, y = Total_Number_of_Tests_Performed)) +
+  geom_point(aes(color = Weekend)) +
+  geom_line() + rahul_man_figure_theme +
+  scale_color_manual(name = "Day of Week", 
+                     labels = c("Weekday", "Weekend"),
+                     values = c("red", "blue"))
+p
+
+
+p = ggplot(data = NYC_full_testing_data,
+           aes(x = Date, y = Prop_Pos)) +
+  geom_point(aes(color = Weekend)) +
+  geom_line() + rahul_man_figure_theme +
+  scale_color_manual(name = "Day of Week", 
+                     labels = c("Weekday", "Weekend"),
+                     values = c("red", "blue"))
+p
+
+
+```
+```{r}
+NYC_weekly_testing_data = NYC_full_testing_data %>%
+  group_by(Week)
+```
+
