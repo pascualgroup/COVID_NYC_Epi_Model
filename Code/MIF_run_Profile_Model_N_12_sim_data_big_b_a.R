@@ -1,10 +1,10 @@
 
 
 
-# ---- mif_code ----
+# ---- mif_code_profile_N_12_big_b_a_sim ----
 
 # Header ------------------------------------------------------------------
-## Name: MIF_run_Model_N_12_sim_data_big_b_a.R
+## Name: MIF_run_profile_Model_N_12_sim_data_big_b_a.R
 ## Author: Rahul Subramanian
 ## Description: Runs parameter combinations on midway for profile from original param grid
 ## for Model N_12

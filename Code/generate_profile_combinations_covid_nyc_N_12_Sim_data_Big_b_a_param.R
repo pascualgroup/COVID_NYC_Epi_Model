@@ -1,4 +1,4 @@
-# ---- generate_profile_combinataions ----
+# ---- generate_profile_combinations_N_12_big_b_a_sim ----
 
 
 # Header ------------------------------------------------------------------

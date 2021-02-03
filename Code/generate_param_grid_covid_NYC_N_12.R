@@ -1,4 +1,4 @@
-# ---- generate_profile_combinataions ----
+# ---- generate_param_grid_N_12 ----
 
 
 # Header ------------------------------------------------------------------

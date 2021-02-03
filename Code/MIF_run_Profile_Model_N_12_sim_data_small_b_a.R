@@ -1,7 +1,7 @@
 
 
 
-# ---- mif_code ----
+# ---- mif_code_profile_N_12_small_b_a_sim ----
 
 # Header ------------------------------------------------------------------
 ## Name: MIF_run_Model_N_12_sim_data_small_b_a.R

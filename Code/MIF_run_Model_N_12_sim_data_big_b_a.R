@@ -1,7 +1,7 @@
 
 
 
-# ---- mif_code ----
+# ---- mif_code_grid_N_12_big_b_a_sim ----
 
 # Header ------------------------------------------------------------------
 ## Name: MIF_run_Model_N_12_sim_data_big_b_a.R
