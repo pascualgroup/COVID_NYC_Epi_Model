@@ -39,35 +39,8 @@ source("rahul_theme.R")
 ```
 
 ## Load Raw Data
-```{r}
-boros_raw = read.csv(file = "../Down_Data/boro.csv")
-head(boros_raw)
-by_age_raw = read.csv(file = "../Down_Data/by-age.csv")
-head(by_age_raw)
-by_sex_raw = read.csv(file = "../Down_Data/by-sex.csv")
-head(by_sex_raw)
-case_hosp_death_raw = read.csv(file = "../Down_Data/case-hosp-death.csv")
-head(case_hosp_death_raw)
 
 
-summary_raw = read.csv(file = "../Down_Data/summary.csv")
-head(summary_raw)
-tests_by_zcta_raw = read.csv(file = "../Down_Data/tests-by-zcta.csv")
-head(tests_by_zcta_raw)
-nrow(tests_by_zcta_raw)
-
-testing_raw = read.csv(file = "../Down_Data/testing.csv")
-head(testing_raw)
-
-
-```
-Note: The file testing.csv was not on the current version of the NYC
- git repo, but an older commit:
- 
- https://github.com/nychealth/coronavirus-data/blob/6968ca6f4a23c04f9a51ec2e3b161c41cd437bdb/testing.csv
-
-
- Download link: https://raw.githubusercontent.com/nychealth/coronavirus-data/6968ca6f4a23c04f9a51ec2e3b161c41cd437bdb/testing.csv
 
 ### Read in NY State Testing Raw Data
 ```{r}
@@ -90,15 +63,13 @@ one_week_after_testing_rec = date_of_NY_testing_rec_with_delay + weeks(1)
 
 ```
 
-## PCR Positive Rate analysis
-### NY State testing Data
 ```{r}
-head(NY_state_raw_testing_data)
+#head(NY_state_raw_testing_data)
 NYC_county_list = c("Brooklyn", "Kings", "Queens", "Bronx", "Richmond",
                     "New York")
 NYC_Counties_full_testing_data = NY_state_raw_testing_data %>%
   filter(County %in% NYC_county_list)
-NYC_Counties_full_testing_data
+#NYC_Counties_full_testing_data
 
 NYC_full_testing_data = NYC_Counties_full_testing_data %>%
   group_by(Test.Date) %>%
