@@ -49,9 +49,7 @@ head(by_sex_raw)
 case_hosp_death_raw = read.csv(file = "../Down_Data/case-hosp-death.csv")
 head(case_hosp_death_raw)
 
-probable_confirmed_dod_raw =
-  read.csv(file = "../Down_Data/probable-confirmed-dod.csv")
-head(probable_confirmed_dod_raw)
+
 summary_raw = read.csv(file = "../Down_Data/summary.csv")
 head(summary_raw)
 tests_by_zcta_raw = read.csv(file = "../Down_Data/tests-by-zcta.csv")
@@ -369,79 +367,7 @@ mean(testing_during_rec_period$Number_tested)
 
 ```
 
-## Total Positive Cases Calibration
-```{r}
-head(case_hosp_death_raw)
-case_hosp_death_df = case_hosp_death_raw%>%
-  separate(col = DATE_OF_INTEREST, into = c("Month", "Day", "Year"),
-           sep = "/", remove = FALSE)%>%
-  mutate(Date = Start_Date_index +
-           months(as.numeric(Month)-1) +
-           days(as.numeric(Day)))
-case_hosp_death_during_rec_week = case_hosp_death_df %>%
-  filter(Date > date_of_NY_testing_rec_with_delay) %>%
-  filter(Date <= one_week_after_testing_rec)
 
-total_cases_during_rec_week_from_case_hosp_death = sum(case_hosp_death_during_rec_week$NEW_COVID_CASE_COUNT)
-total_cases_during_rec_week_from_case_hosp_death
-
-total_positive_tests_from_NY_State_data_during_rec_week =
-  sum(NYC_full_testing_data_during_rec_period$New_Positives)
-total_positive_tests_from_NY_State_data_during_rec_week  
-
-total_positive_tests_from_testing_csv_file =
-  sum(testing_during_rec_period$Number_confirmed)
-total_positive_tests_from_testing_csv_file
-```
-
-## Combined plot of cases from different sources
-
-```{r}
-
- head(case_hosp_death_df)
-case_hosp_death_rel = case_hosp_death_df %>%
-  dplyr::select(Date, NYC_City_DB = NEW_COVID_CASE_COUNT)
-
-head(NYC_full_testing_data)
-NY_state_data_cases = NYC_full_testing_data %>%
-  dplyr::select(Date, NY_State_DB_NYC = New_Positives)
-NYC_testing_csv_file_cases = testing_case_df %>%
-  dplyr::select(Date, NYC_test_csv = Number_confirmed)
-
-combined_case_comp_df = join(case_hosp_death_rel,
-                             NY_state_data_cases)
-combined_case_comp_df = join(combined_case_comp_df,
-                             NYC_testing_csv_file_cases)
-combined_case_comp_melt_df = melt(combined_case_comp_df,
-                                  id.vars = c("Date"),
-                                  value.name = "Cases")
-p = ggplot(data = combined_case_comp_melt_df,
-           aes(x = Date, y = Cases, color = variable)) + geom_point() +
-  geom_line(aes(group = variable)) + rahul_man_figure_theme +
-  scale_color_viridis_d(name = "Data Source")
-p
-```
-
-##Lag comparison of cases
-```{r}
-case_hosp_death_df = case_hosp_death_df %>%
-  mutate(lagged_testing_date = Date + days(2))
-
-lag_comp_case_hosp_death_df = case_hosp_death_df %>%
-  dplyr::select(Date = lagged_testing_date,
-                NYC_City_DB_lag = NEW_COVID_CASE_COUNT)
-lag_comp_case_df = join(lag_comp_case_hosp_death_df,
-                        NY_state_data_cases)
-
-lag_comp_case_melt_df = melt(lag_comp_case_df,
-                                  id.vars = c("Date"),
-                                  value.name = "Cases")
-p = ggplot(data = lag_comp_case_melt_df,
-           aes(x = Date, y = Cases, color = variable)) + geom_point() +
-  geom_line(aes(group = variable)) + rahul_man_figure_theme +
-  scale_color_manual(name = "Data Source", values = c("red", "blue"))
-p
-```
 
 ### Estimated Testing Capcity in NYC
 According to NY State health department testing database
