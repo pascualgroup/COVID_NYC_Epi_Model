@@ -1,0 +1,2033 @@
+---
+title: "Surface Plots from b_a Profile"
+author: "Rahul Subramanian"
+date: "7/8/2020"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ggplot2)
+library(plotly)
+source("load_libraries_essential.R")
+library(pomp)
+source("rahul_theme.R")
+```
+## Surface plot of b_a vs b_p vs R_0, color by b_a
+
+```{r}
+model_name = "N_12"
+load(file = paste0("../Generated_Data/Profiles/", model_name, "_Model/top_2_LL_data/b_a_profile_antibody_surface_plot_data.RData"))
+
+load(file = paste0("../Generated_Data/Profiles/", model_name, "_Model/top_2_LL_data/b_a_profile_antibody_surface_plot_data_with_outlier.RData"))
+#head(antibody_top_2_LL_from_b_a_profile_top_2_LL_no_outlier)
+
+antibody_top_2_LL_from_b_a_profile_top_2_LL_no_2_outliers =
+  antibody_top_2_LL_from_b_a_profile_top_2_LL_no_outlier %>%
+  filter(b_p > 0.02)
+
+f1 <- list(
+  family = "Arial, sans-serif",
+  size = 18,
+  color = "black"
+)
+f2 <- list(
+  family = "Old Standard TT, serif",
+  size = 15,
+  color = "black"
+)
+R_0_surf_plot_data = antibody_top_2_LL_from_b_a_profile_top_2_LL_no_2_outliers %>%dplyr::select(R_0, b_a, b_p)
+write.csv(R_0_surf_plot_data,
+          "../Generated_Data/Profiles/N_12_Model/top_2_LL_data/R_0_Surface_Plot_Data_for_Revision.csv",
+          row.names = FALSE)
+
+fig <- plot_ly(antibody_top_2_LL_from_b_a_profile_top_2_LL_no_2_outliers,
+               x = ~b_a, y = ~b_p, z = ~R_0, color = ~R_0)
+fig <- fig %>% add_markers()
+fig <- fig %>% layout(scene = list(xaxis = list(title = ' b_a',
+                                                zeroline = TRUE,
+                                                range = c(0,1),
+                                                zerolinecolor = toRGB("black"),
+                                                titlefont = f1,
+                                                tickfont = f2,
+                                  zerolinewidth = 6),
+                     yaxis = list(title = ' b_p',
+                                  range = c(0,1),
+                                  zeroline = TRUE,
+                                  showline = TRUE,
+                                  zerolinecolor = toRGB("black"),
+                                  titlefont = f1,
+                                  tickfont = f2,
+                                  zerolinewidth = 6),
+                     zaxis = list(title = 'R_0 ',
+                                  range = c(0,8.2),
+                                  zeroline = TRUE,
+                                  zerolinecolor = toRGB("black"),
+                                  titlefont = f1,
+                                  tickfont = f2,
+                                  zerolinewidth = 6)))
+
+fig
+
+```
+```{r}
+fig <- fig %>% layout(scene = list(xaxis = list(title = ' b_a',
+                                                zeroline = TRUE,
+                                                zerolinecolor = toRGB("black"),
+                                                titlefont = f1,
+                                                tickfont = f2,
+                                  zerolinewidth = 6),
+                     yaxis = list(title = ' b_p',
+                                  zeroline = TRUE,
+                                  showline = TRUE,
+                                  zerolinecolor = toRGB("black"),
+                                  titlefont = f1,
+                                  tickfont = f2,
+                                  zerolinewidth = 6),
+                     zaxis = list(title = 'R_0 ',
+                                  zeroline = TRUE,
+                                  zerolinecolor = toRGB("black"),
+                                  titlefont = f1,
+                                  tickfont = f2,
+                                  zerolinewidth = 6)))
+
+fig
+
+```
+
+
+## Surface plot of b_a vs b_p vs R_0_NGM, color by b_a
+```{r}
+
+R_0_NGM_surf_plot_data = antibody_top_2_LL_from_b_a_profile_top_2_LL_no_2_outliers %>%dplyr::select(R_0_NGM, b_a, b_p)
+write.csv(R_0_NGM_surf_plot_data,
+          "../Generated_Data/Profiles/N_12_Model/top_2_LL_data/R_0_NGM_Surface_Plot_Data_for_Revision.csv",
+          row.names = FALSE)
+
+fig <- plot_ly(antibody_top_2_LL_from_b_a_profile_top_2_LL_no_2_outliers,
+               x = ~b_a, y = ~b_p, z = ~R_0_NGM, color = ~R_0_NGM)
+fig <- fig %>% add_markers()
+fig <- fig %>% layout(scene = list(xaxis = list(title = ' b_a',
+                                                zeroline = TRUE,
+                                                range = c(0,1),
+                                                zerolinecolor = toRGB("black"),
+                                                titlefont = f1,
+                                                tickfont = f2,
+                                  zerolinewidth = 6),
+                     yaxis = list(title = ' b_p',
+                                  range = c(0,1),
+                                  zeroline = TRUE,
+                                  showline = TRUE,
+                                  zerolinecolor = toRGB("black"),
+                                  titlefont = f1,
+                                  tickfont = f2,
+                                  zerolinewidth = 6),
+                     zaxis = list(title = 'R_0_NGM ',
+                                  range = c(0,5),
+                                  zeroline = TRUE,
+                                  zerolinecolor = toRGB("black"),
+                                  titlefont = f1,
+                                  tickfont = f2,
+                                  zerolinewidth = 6)))
+
+fig
+
+```
+
+```{r}
+fig <- plot_ly(antibody_top_2_LL_from_b_a_profile_top_2_LL_no_2_outliers,
+               x = ~b_a, y = ~b_p, z = ~R_0_NGM, color = ~R_0_NGM)
+fig <- fig %>% add_markers()
+fig <- fig %>% layout(scene = list(xaxis = list(title = ' b_a'),
+                     yaxis = list(title = ' b_p'),
+                     zaxis = list(title = 'R_0_NGM ')))
+
+fig
+```
+
+## Surface plot of R_0 vs R_0_NGM vs b_p, color by b_a
+```{r}
+fig <- plot_ly(antibody_top_2_LL_from_b_a_profile_top_2_LL_no_2_outliers,
+               x = ~R_0, y = ~R_0_NGM, z = ~b_p, color = ~b_a)
+fig <- fig %>% add_markers()
+fig <- fig %>% layout(scene = list(xaxis = list(title = ' R_0'),
+                     yaxis = list(title = ' R_0_NGM'),
+                     zaxis = list(title = 'b_p ')))
+
+fig
+```
+
+```{r}
+fig <- plot_ly(antibody_top_2_LL_from_b_a_profile_top_2_LL_no_2_outliers,
+               x = ~b_a, y = ~b_p, z = ~R_0, color = ~R_0_NGM)
+fig <- fig %>% add_markers()
+fig <- fig %>% layout(scene = list(xaxis = list(title = ' b_a',
+                                                zeroline = TRUE,
+                                                range = c(0,1),
+                                                zerolinecolor = toRGB("black"),
+                                                titlefont = f1,
+                                                tickfont = f2,
+                                  zerolinewidth = 6),
+                     yaxis = list(title = ' b_p',
+                                  range = c(0,1),
+                                  zeroline = TRUE,
+                                  showline = TRUE,
+                                  zerolinecolor = toRGB("black"),
+                                  titlefont = f1,
+                                  tickfont = f2,
+                                  zerolinewidth = 6),
+                     zaxis = list(title = 'R_0_NGM ',
+                                  range = c(0,5),
+                                  zeroline = TRUE,
+                                  zerolinecolor = toRGB("black"),
+                                  titlefont = f1,
+                                  tickfont = f2,
+                                  zerolinewidth = 6)))
+```
+
+
+
+```{r}
+p = ggplot(data = antibody_top_2_LL_from_b_a_profile_top_2_LL_no_2_outliers,
+           aes(x = R_0,
+               y = R_0_NGM,
+               color = b_a)) + rahul_man_figure_theme +
+  scale_color_viridis_c(name = "Strength \n  of Asymp\n  Transmission") +
+  geom_point() +
+  xlab("Secondary cases from each \n primary symptomatic case") + ylab("Overall Reproductive Number") 
+p
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/top_2_LL_via_antibody_comp_plots/b_a_profile_R_0_vs_R_0_NGM_antibody_LL_top_no_outliers_color_b_a.png")
+print(p)
+dev.off()
+
+
+```
+
+## Isolate MLE for each scenario
+
+```{r}
+head(antibody_top_2_LL_from_b_a_profile_top_2_LL_no_2_outliers)
+range(antibody_top_2_LL_from_b_a_profile_top_2_LL_no_2_outliers$E_0)
+range(antibody_top_2_LL_from_b_a_profile_top_2_LL_no_2_outliers$z_0)
+
+range(antibody_top_2_LL_from_b_a_profile_top_2_LL_no_2_outliers$b_p)
+p = ggplot(data = antibody_top_2_LL_from_b_a_profile_top_2_LL_no_2_outliers,
+           aes(x = b_p)) +
+  geom_histogram() + rahul_theme
+p
+large_b_p_params = antibody_top_2_LL_from_b_a_profile_top_2_LL_no_2_outliers %>%
+  filter(b_p >0.90)
+
+p = ggplot(data = large_b_p_params,
+         aes(x = R_0,
+             y = R_0_NGM,
+             color = b_a)) +
+  geom_point() + scale_color_viridis_c(name = "Asymp \n Trans \n Strength") +
+  xlab("Secondary cases from each \n primary symptomatic case") + ylab("Overall Reproductive Number \n (Includes Pre-Symp and Asymp Transmission)")  +
+  rahul_man_figure_theme +
+  theme_white_background+
+  theme(axis.line = element_line(colour = 'black', size = 1))+
+  theme(axis.ticks = element_line(colour = "black", size = 1.5)) +
+  theme(axis.text.x = element_text(size=21)) +
+  theme(axis.text.y = element_text(size=21))
+p
+
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/top_2_LL_via_antibody_comp_plots/Man_Figs/b_a_profile_R_0_vs_R_0_NGM_antibody_LL_top_no_outliers_color_b_a_high_b_p.png")
+print(p)
+dev.off()
+  
+  
+p
+```
+
+```{r}
+small_b_p_params = antibody_top_2_LL_from_b_a_profile_top_2_LL_no_2_outliers %>%
+  filter(b_p <0.50)
+small_b_p_params
+range(small_b_p_params$b_a)
+
+small_b_p_big_b_a = small_b_p_params %>%
+  filter(b_a == max(b_a))
+small_b_p_small_b_a = small_b_p_params %>%
+  filter(b_a == min(b_a))
+small_b_p_big_b_a$b_p
+small_b_p_small_b_a$b_p
+hist(small_b_p_params$b_p)
+
+
+hist(antibody_top_2_LL_from_b_a_profile_top_2_LL_no_2_outliers$b_p)
+
+big_b_a_values = antibody_top_2_LL_from_b_a_profile_top_2_LL_no_2_outliers %>%
+  filter(b_a >= 0.52)
+range(big_b_a_values$R_0_NGM)
+range(big_b_a_values$R_0)
+small_b_a_values =antibody_top_2_LL_from_b_a_profile_top_2_LL_no_2_outliers %>%
+  filter(b_a < 0.52)
+range(small_b_a_values$R_0_NGM)
+range(small_b_a_values$R_0)
+range(antibody_top_2_LL_from_b_a_profile_top_2_LL$p_S)
+
+mid_b_p = antibody_top_2_LL_from_b_a_profile_top_2_LL%>%
+  filter(b_p <0.55) %>%
+  filter(b_p > 0.45) 
+mid_b_p_big_b_a = mid_b_p %>%
+  filter(b_a == max(b_a))
+mid_b_p_small_b_a = mid_b_p %>%
+  filter(b_a < max(b_a)) %>%
+  filter(b_p == min(b_p))
+
+mid_b_p_big_b_a$R_0_NGM
+mid_b_p_small_b_a$R_0_NGM
+
+mid_b_p_big_b_a$R_0
+mid_b_p_small_b_a$R_0
+
+write.csv(mid_b_p_big_b_a, "../Generated_Data/Profiles/N_12_Model/top_2_LL_data/Man_Table_data/b_a_profile_top_2_LL_via_case_and_antibody_LL_mid_b_p_big_b_a_parameter_combination_for_simulation.csv")
+
+write.csv(mid_b_p_small_b_a, "../Generated_Data/Profiles/N_12_Model/top_2_LL_data/Man_Table_data/b_a_profile_top_2_LL_via_case_and_antibody_LL_mid_b_p_small_b_a_parameter_combination_for_simulation.csv")
+
+
+low_b_p = antibody_top_2_LL_from_b_a_profile_top_2_LL%>%
+  filter(b_p < 0.70) %>%
+  filter(b_p > 0.50)
+hist(low_b_p$b_p)
+low_b_p$b_a
+```
+
+
+### Pick big b_a parameter combination
+```{r}
+big_b_a_MLE = large_b_p_params %>%
+  filter(b_a == max(b_a)) %>%
+  filter(b_p == max(b_p)) 
+big_b_a_MLE
+write.csv(big_b_a_MLE, "../Generated_Data/Profiles/N_12_Model/top_2_LL_data/Man_Table_data/b_a_profile_top_2_LL_via_case_and_antibody_LL_big_b_a_parameter_combination_for_simulation.csv")
+big_b_a_MLE_comb =   big_b_a_MLE %>%
+  dplyr::select(-msg, -iter_num, -param_index,
+                -loglik, -nfail, -trace_num, -loglist.se,
+                -Antibody_Mean_LL, -Antibody_LL_SE,
+                -Median_Herd_Immunity, -combo_num,
+                -sim_subset_index, -duration_of_symp_1,
+                -duration_of_symp_2, -duration_of_symp,
+                -gamma_total, -Beta,
+                -R_0_P, -R_0_A, -R_0_S_1, -R_0_S_2,
+                -R_0_NGM)
+
+mid_b_p_big_b_a_comb =   mid_b_p_big_b_a %>%
+  dplyr::select(-msg, -iter_num, -param_index,
+                -loglik, -nfail, -trace_num, -loglist.se,
+                -Antibody_Mean_LL, -Antibody_LL_SE,
+                -Median_Herd_Immunity, -combo_num,
+                -sim_subset_index, -duration_of_symp_1,
+                -duration_of_symp_2, -duration_of_symp,
+                -gamma_total, -Beta,
+                -R_0_P, -R_0_A, -R_0_S_1, -R_0_S_2,
+                -R_0_NGM)
+
+
+```
+
+
+### Load covaraites and obs data
+```{r}
+#Load Observed NYC case data
+Observed_data = read.csv(paste0(
+  "../Generated_Data/observed_data_",
+  model_name, ".csv"))
+head(Observed_data)
+
+### Define start date
+true_start_date = as.Date("2020-03-01")
+t0 = 0
+start_of_year = as.Date("2020-01-01")
+first_saturday_in_year = as.Date("2020-01-04")
+
+## Compartment/Queue Cohort Numbers
+M = 5
+V = 13
+K = 14
+
+
+#Declare Csnippets and data
+source("Csnippet_nyc_coronavirus_model_N_12.R")
+
+## Load NYC covariate data
+covariate_df = read.csv(file =
+                          paste0("../Generated_Data/covariate_data_",
+                                 model_name, ".csv"))
+
+
+
+### Create covariate table
+covar=covariate_table(
+  time=covariate_df$times,
+  L_advanced_2_days=covariate_df$L_advanced_2_days,
+  F_w_y = covariate_df$F_w_y,
+  L_orig = covariate_df$L_orig,
+  w = covariate_df$Week,
+  y = covariate_df$Year,
+  times="time"
+)
+```
+
+### Simulate from big b_a param combination
+```{r}
+##Simulation from ML
+sim_data_big_b_a = simulate(nsim = 101,
+                    seed = 12345,
+                    times = Observed_data$times,
+                    t0 = t0,
+                    rprocess = pomp::euler(rproc,delta.t = 1),
+                    params = big_b_a_MLE_comb,
+                    paramnames = paramnames,
+                    statenames = statenames,
+                    obsnames = obsnames,
+                    accumvars = acumvarnames,
+                    rinit = init,
+                    rmeas = rmeas,
+                    partrans = par_trans,
+                    covar = covar,
+                    format = "data.frame")
+#head(sim_data)
+
+sim_data_big_a_FOI_data = sim_data_big_b_a %>%
+  dplyr::select(time, .id, I_P, I_S_1, I_S_2,
+                I_A, N, beta_t) 
+sim_data_big_a_FOI_data = sim_data_big_a_FOI_data %>%
+  mutate(lambda_FOI_S = (beta_t*(I_S_1 + I_S_2))/N,
+         lambda_FOI_A = (beta_t*big_b_a_MLE$b_a*I_A)/N,
+         lambda_FOI_P = (beta_t*big_b_a_MLE$b_p*I_P)/N) %>%
+  mutate(lambda_FOI_total =
+           lambda_FOI_S + lambda_FOI_A + lambda_FOI_P)
+
+median_FOI_data_big_b_a = sim_data_big_a_FOI_data %>%
+  group_by(time) %>%
+  summarize(Symptomatic = median(lambda_FOI_S),
+            Asymptomatic = median(lambda_FOI_A),
+            Presymptomatic = median(lambda_FOI_P)) %>%
+  as.data.frame() 
+median_FOI_data_big_b_a_melt = median_FOI_data_big_b_a %>%
+  melt(id.vars= c("time")) %>%
+  dplyr::select(time, FOI = value,
+                Infection_Status = variable)
+
+#head(median_FOI_data)
+p = ggplot(data = median_FOI_data_big_b_a_melt,
+           aes(x = time,
+               y = FOI,
+               fill = Infection_Status)) +
+  geom_area() + rahul_man_figure_theme +
+  theme_white_background +
+  xlab("Days since March 1, 2020") +
+  ylab("Force of Infection") +
+  theme(legend.position = c(0.70,0.75)) +
+  scale_fill_discrete(name = "Infection Status")+
+  theme(axis.title.x = element_text(face = "plain", size = 24),
+        axis.title.y = element_text(face = "plain", size = 24))+
+  theme(axis.line = element_line(colour = 'black', size = 1))+
+  theme(axis.ticks = element_line(colour = "black", size = 1.5)) +
+  theme(axis.text.x = element_text(size=21)) +
+  theme(axis.text.y = element_text(size=21))
+p
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/top_2_LL_via_antibody_comp_plots/Man_Figs/contribution_to_FOI_for_large_b_a_parameter_combination.png")
+print(p)
+dev.off()
+
+jpeg("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/top_2_LL_via_antibody_comp_plots/Man_Figs/contribution_to_FOI_for_large_b_a_parameter_combination.jpeg",
+     quality = 100)
+print(p)
+dev.off()
+
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/top_2_LL_via_antibody_comp_plots/Man_Figs/contribution_to_FOI_for_large_b_a_parameter_combination.png")
+print(p)
+dev.off()
+
+jpeg("../Figures/Profiles/N_12_Model/Man_Figs/contribution_to_FOI_for_large_b_a_parameter_combination.jpeg",
+     quality = 100)
+print(p)
+dev.off()
+
+png("../Figures/Profiles/N_12_Model/Man_Figs/contribution_to_FOI_for_large_b_a_parameter_combination.png")
+print(p)
+dev.off()
+
+```
+### Simulate from mid b_p big b_a param combination
+```{r}
+##Simulation from ML
+sim_data_mid_b_p_big_b_a = simulate(nsim = 101,
+                    seed = 12345,
+                    times = Observed_data$times,
+                    t0 = t0,
+                    rprocess = pomp::euler(rproc,delta.t = 1),
+                    params = mid_b_p_big_b_a_comb,
+                    paramnames = paramnames,
+                    statenames = statenames,
+                    obsnames = obsnames,
+                    accumvars = acumvarnames,
+                    rinit = init,
+                    rmeas = rmeas,
+                    partrans = par_trans,
+                    covar = covar,
+                    format = "data.frame")
+#head(sim_data)
+
+sim_data_mid_b_p_big_a_FOI_data = sim_data_mid_b_p_big_b_a %>%
+  dplyr::select(time, .id, I_P, I_S_1, I_S_2,
+                I_A, N, beta_t) 
+sim_data_mid_b_p_big_a_FOI_data = sim_data_mid_b_p_big_a_FOI_data %>%
+  mutate(lambda_FOI_S = (beta_t*(I_S_1 + I_S_2))/N,
+         lambda_FOI_A = (beta_t*mid_b_p_big_b_a_comb$b_a*I_A)/N,
+         lambda_FOI_P = (beta_t*mid_b_p_big_b_a_comb$b_p*I_P)/N) %>%
+  mutate(lambda_FOI_total =
+           lambda_FOI_S + lambda_FOI_A + lambda_FOI_P)
+
+median_FOI_data_mid_b_p_big_b_a = sim_data_mid_b_p_big_a_FOI_data %>%
+  group_by(time) %>%
+  summarize(Symptomatic = median(lambda_FOI_S),
+            Asymptomatic = median(lambda_FOI_A),
+            Presymptomatic = median(lambda_FOI_P)) %>%
+  as.data.frame() 
+median_FOI_data_mid_b_p_big_b_a_melt = median_FOI_data_mid_b_p_big_b_a %>%
+  melt(id.vars= c("time")) %>%
+  dplyr::select(time, FOI = value,
+                Infection_Status = variable)
+
+#head(median_FOI_data)
+p = ggplot(data = median_FOI_data_mid_b_p_big_b_a_melt,
+           aes(x = time,
+               y = FOI,
+               fill = Infection_Status)) +
+  geom_area() + rahul_man_figure_theme +
+  theme_white_background +
+  xlab("Days since March 1, 2020") +
+  ylab("Force of Infection") +
+  theme(legend.position = c(0.70,0.75)) +
+  scale_fill_discrete(name = "Infection Status")+
+  theme(axis.title.x = element_text(face = "plain", size = 24),
+        axis.title.y = element_text(face = "plain", size = 24))+
+  theme(axis.line = element_line(colour = 'black', size = 1))+
+  theme(axis.ticks = element_line(colour = "black", size = 1.5)) +
+  theme(axis.text.x = element_text(size=21)) +
+  theme(axis.text.y = element_text(size=21))
+p
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/top_2_LL_via_antibody_comp_plots/Man_Figs/contribution_to_FOI_for_mid_b_p_large_b_a_parameter_combination.png")
+print(p)
+dev.off()
+
+jpeg("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/top_2_LL_via_antibody_comp_plots/Man_Figs/contribution_to_FOI_for_mid_b_p_large_b_a_parameter_combination.jpeg",
+     quality = 100)
+print(p)
+dev.off()
+
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/top_2_LL_via_antibody_comp_plots/Man_Figs/contribution_to_FOI_for_mid_b_p_large_b_a_parameter_combination.png")
+print(p)
+dev.off()
+
+jpeg("../Figures/Profiles/N_12_Model/Man_Figs/contribution_to_FOI_for_mid_b_p_large_b_a_parameter_combination.jpeg",
+     quality = 100)
+print(p)
+dev.off()
+
+png("../Figures/Profiles/N_12_Model/Man_Figs/contribution_to_FOI_for_mid_b_p_large_b_a_parameter_combination.png")
+print(p)
+dev.off()
+
+```
+
+### Identify small b_a param
+```{r}
+small_b_a_MLE = large_b_p_params %>%
+  filter(b_a > 0) %>%
+  filter(b_a == min(b_a)) %>%
+  filter(b_p == max(b_p)) 
+small_b_a_MLE
+write.csv(small_b_a_MLE, "../Generated_Data/Profiles/N_12_Model/top_2_LL_data/Man_Table_data/b_a_profile_top_2_LL_via_case_and_antibody_LL_small_b_a_parameter_combination_for_simulation.csv")
+small_b_a_MLE_comb =   small_b_a_MLE %>%
+  dplyr::select(-msg, -iter_num, -param_index,
+                -loglik, -nfail, -trace_num, -loglist.se,
+                -Antibody_Mean_LL, -Antibody_LL_SE,
+                -Median_Herd_Immunity, -combo_num,
+                -sim_subset_index, -duration_of_symp_1,
+                -duration_of_symp_2, -duration_of_symp,
+                -gamma_total, -Beta,
+                -R_0_P, -R_0_A, -R_0_S_1, -R_0_S_2,
+                -R_0_NGM)
+
+
+```
+
+### Identify mid b_p small b_a param
+```{r}
+
+
+mid_b_p_small_b_a_comb =   mid_b_p_small_b_a %>%
+  dplyr::select(-msg, -iter_num, -param_index,
+                -loglik, -nfail, -trace_num, -loglist.se,
+                -Antibody_Mean_LL, -Antibody_LL_SE,
+                -Median_Herd_Immunity, -combo_num,
+                -sim_subset_index, -duration_of_symp_1,
+                -duration_of_symp_2, -duration_of_symp,
+                -gamma_total, -Beta,
+                -R_0_P, -R_0_A, -R_0_S_1, -R_0_S_2,
+                -R_0_NGM)
+
+
+```
+
+### Simulate from small b_a param combination
+```{r}
+##Simulation from ML
+sim_data_small_b_a = simulate(nsim = 101,
+                    seed = 12345,
+                    times = Observed_data$times,
+                    t0 = t0,
+                    rprocess = pomp::euler(rproc,delta.t = 1),
+                    params = small_b_a_MLE_comb,
+                    paramnames = paramnames,
+                    statenames = statenames,
+                    obsnames = obsnames,
+                    accumvars = acumvarnames,
+                    rinit = init,
+                    rmeas = rmeas,
+                    partrans = par_trans,
+                    covar = covar,
+                    format = "data.frame")
+#head(sim_data)
+
+sim_data_small_a_FOI_data = sim_data_small_b_a %>%
+  dplyr::select(time, .id, I_P, I_S_1, I_S_2,
+                I_A, N, beta_t) 
+sim_data_small_a_FOI_data = sim_data_small_a_FOI_data %>%
+  mutate(lambda_FOI_S = (beta_t*(I_S_1 + I_S_2))/N,
+         lambda_FOI_A = (beta_t*small_b_a_MLE$b_a*I_A)/N,
+         lambda_FOI_P = (beta_t*small_b_a_MLE$b_p*I_P)/N) %>%
+  mutate(lambda_FOI_total =
+           lambda_FOI_S + lambda_FOI_A + lambda_FOI_P)
+
+median_FOI_data_small_b_a = sim_data_small_a_FOI_data %>%
+  group_by(time) %>%
+  summarize(Symptomatic = median(lambda_FOI_S),
+            Asymptomatic = median(lambda_FOI_A),
+            Presymptomatic = median(lambda_FOI_P)) %>%
+  as.data.frame() 
+median_FOI_data_small_b_a_melt = median_FOI_data_small_b_a %>%
+  melt(id.vars= c("time")) %>%
+  dplyr::select(time, FOI = value,
+                Infection_Status = variable)
+
+#head(median_FOI_data)
+p = ggplot(data = median_FOI_data_small_b_a_melt,
+           aes(x = time,
+               y = FOI,
+               fill = Infection_Status)) +
+  geom_area() + rahul_man_figure_theme +
+  theme_white_background +
+  xlab("Days since March 1, 2020") +
+  ylab("Force of Infection") +
+  theme(legend.position = c(0.70,0.75)) +
+  scale_fill_discrete(name = "Infection Status")+
+  theme(axis.title.x = element_text(face = "plain", size = 24),
+        axis.title.y = element_text(face = "plain", size = 24))+
+  theme(axis.line = element_line(colour = 'black', size = 1))+
+  theme(axis.ticks = element_line(colour = "black", size = 1.5)) +
+  theme(axis.text.x = element_text(size=21)) +
+  theme(axis.text.y = element_text(size=21))
+p
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/top_2_LL_via_antibody_comp_plots/Man_Figs/contribution_to_FOI_for_small_b_a_parameter_combination.png")
+print(p)
+dev.off()
+
+jpeg("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/top_2_LL_via_antibody_comp_plots/Man_Figs/contribution_to_FOI_for_small_b_a_parameter_combination.jpeg",
+     quality = 100)
+print(p)
+dev.off()
+
+jpeg("../Figures/Profiles/N_12_Model/Man_Figs/contribution_to_FOI_for_small_b_a_parameter_combination.jpeg",
+     quality = 100)
+print(p)
+dev.off()
+
+png("../Figures/Profiles/N_12_Model/Man_Figs/contribution_to_FOI_for_small_b_a_parameter_combination.png")
+print(p)
+dev.off()
+
+
+
+```
+
+
+### Simulate from small b_a param combination
+```{r}
+##Simulation from ML
+sim_data_mid_b_p_small_b_a = simulate(nsim = 101,
+                    seed = 12345,
+                    times = Observed_data$times,
+                    t0 = t0,
+                    rprocess = pomp::euler(rproc,delta.t = 1),
+                    params = mid_b_p_small_b_a_comb,
+                    paramnames = paramnames,
+                    statenames = statenames,
+                    obsnames = obsnames,
+                    accumvars = acumvarnames,
+                    rinit = init,
+                    rmeas = rmeas,
+                    partrans = par_trans,
+                    covar = covar,
+                    format = "data.frame")
+#head(sim_data)
+
+sim_data_mid_b_p_small_a_FOI_data = sim_data_mid_b_p_small_b_a %>%
+  dplyr::select(time, .id, I_P, I_S_1, I_S_2,
+                I_A, N, beta_t) 
+sim_data_mid_b_p_small_a_FOI_data = sim_data_mid_b_p_small_a_FOI_data %>%
+  mutate(lambda_FOI_S = (beta_t*(I_S_1 + I_S_2))/N,
+         lambda_FOI_A = (beta_t*mid_b_p_small_b_a_comb$b_a*I_A)/N,
+         lambda_FOI_P = (beta_t*mid_b_p_small_b_a_comb$b_p*I_P)/N) %>%
+  mutate(lambda_FOI_total =
+           lambda_FOI_S + lambda_FOI_A + lambda_FOI_P)
+
+median_FOI_data_mid_b_p_small_b_a = sim_data_mid_b_p_small_a_FOI_data %>%
+  group_by(time) %>%
+  summarize(Symptomatic = median(lambda_FOI_S),
+            Asymptomatic = median(lambda_FOI_A),
+            Presymptomatic = median(lambda_FOI_P)) %>%
+  as.data.frame() 
+median_FOI_data_mid_b_p_small_b_a_melt = median_FOI_data_mid_b_p_small_b_a %>%
+  melt(id.vars= c("time")) %>%
+  dplyr::select(time, FOI = value,
+                Infection_Status = variable)
+
+#head(median_FOI_data)
+p = ggplot(data = median_FOI_data_mid_b_p_small_b_a_melt,
+           aes(x = time,
+               y = FOI,
+               fill = Infection_Status)) +
+  geom_area() + rahul_man_figure_theme +
+  theme_white_background +
+  xlab("Days since March 1, 2020") +
+  ylab("Force of Infection") +
+  theme(legend.position = c(0.70,0.75)) +
+  scale_fill_discrete(name = "Infection Status")+
+  theme(axis.title.x = element_text(face = "plain", size = 24),
+        axis.title.y = element_text(face = "plain", size = 24))+
+  theme(axis.line = element_line(colour = 'black', size = 1))+
+  theme(axis.ticks = element_line(colour = "black", size = 1.5)) +
+  theme(axis.text.x = element_text(size=21)) +
+  theme(axis.text.y = element_text(size=21))
+p
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/top_2_LL_via_antibody_comp_plots/Man_Figs/contribution_to_FOI_for_mid_b_p_small_b_a_parameter_combination.png")
+print(p)
+dev.off()
+
+jpeg("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/top_2_LL_via_antibody_comp_plots/Man_Figs/contribution_to_FOI_for_mid_b_p_small_b_a_parameter_combination.jpeg",
+     quality = 100)
+print(p)
+dev.off()
+
+jpeg("../Figures/Profiles/N_12_Model/Man_Figs/contribution_to_FOI_for_mid_b_p_small_b_a_parameter_combination.jpeg",
+     quality = 100)
+print(p)
+dev.off()
+
+png("../Figures/Profiles/N_12_Model/Man_Figs/contribution_to_FOI_for_mid_b_p_small_b_a_parameter_combination.png")
+print(p)
+dev.off()
+
+
+
+```
+
+```{r}
+outlier = antibody_top_2_LL_from_b_a_profile_top_2_LL %>%
+  filter(R_0 > 15)
+outlier
+```
+
+
+### Plot b_a * b_p
+```{r}
+product_data =
+  antibody_top_2_LL_from_b_a_profile_top_2_LL_no_2_outliers %>%
+  mutate(b_a_times_b_p = b_a*b_p,
+         b_a_plus_b_p = b_a + b_p)
+p = ggplot(data = product_data,
+           aes(x = R_0,
+               y = R_0_NGM,
+               color = b_a_times_b_p)) + rahul_man_figure_theme +
+  scale_color_viridis_c() +
+  geom_point(size = 5) +
+  scale_x_continuous(breaks=c(seq(2,9))) +
+  scale_y_continuous(breaks=seq(2,5,1)) +
+  coord_cartesian(expand = FALSE, 
+                  xlim = c(1.75, 9), ylim = c(1.75, 5.25)) + 
+  xlab("Secondary cases from each \n primary symptomatic case") + ylab("Overall Reproductive Number") +
+  theme(axis.line = element_line(colour = 'black', size = 1))+
+  theme(axis.ticks = element_line(colour = "black", size = 1.5)) +
+  theme(axis.text.x = element_text(size=21)) +
+  theme(axis.text.y = element_text(size=21)) +
+   theme(axis.title.x = element_text(face = "plain",
+                                    size = 24),
+        axis.title.y = element_text(face = "plain",
+                                    size = 24))
+p
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/top_2_LL_via_antibody_comp_plots/Man_Figs/b_a_profile_R_0_vs_R_0_NGM_antibody_LL_top_no_outliers_color_b_a_times_b_p.png")
+print(p)
+dev.off()
+
+
+p = ggplot(data = product_data,
+           aes(x = R_0,
+               y = R_0_NGM,
+               color = b_a_times_b_p)) + rahul_man_figure_theme +
+  scale_color_viridis_c() +
+  geom_point(size = 5) +
+  scale_x_continuous(breaks=c(seq(2,9))) +
+  scale_y_continuous(breaks=seq(2,5,1)) +
+  coord_cartesian(expand = FALSE, 
+                  xlim = c(1.75, 9), ylim = c(1.75, 5.25)) + 
+  xlab("Secondary cases from each \n primary symptomatic case") + ylab("Overall Reproductive Number") +
+  theme(axis.line = element_line(colour = 'black', size = 1))+
+  theme(axis.ticks = element_line(colour = "black", size = 1.5)) +
+  theme(axis.text.x = element_text(size=21)) +
+  theme(axis.text.y = element_text(size=21)) +
+   theme(axis.title.x = element_text(face = "plain",
+                                    size = 24),
+        axis.title.y = element_text(face = "plain",
+                                    size = 24))
+p
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/top_2_LL_via_antibody_comp_plots/Man_Figs/b_a_profile_R_0_vs_R_0_NGM_antibody_LL_top_no_outliers_color_b_a_times_b_p_circle_mid_b_p.png")
+print(p)
+dev.off()
+
+
+p = ggplot(data = product_data,
+           aes(x = R_0,
+               y = R_0_NGM,
+               color = b_a_plus_b_p)) + rahul_man_figure_theme +
+  scale_color_viridis_c() +
+  geom_point() +
+  xlab("Secondary cases from each \n primary symptomatic case") + ylab("Overall Reproductive Number") +
+  theme(axis.line = element_line(colour = 'black', size = 1))+
+  theme(axis.ticks = element_line(colour = "black", size = 1.5)) +
+  theme(axis.text.x = element_text(size=21)) +
+  theme(axis.text.y = element_text(size=21)) +
+   theme(axis.title.x = element_text(face = "plain",
+                                    size = 24),
+        axis.title.y = element_text(face = "plain",
+                                    size = 24))
+p
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/top_2_LL_via_antibody_comp_plots/Man_Figs/b_a_profile_R_0_vs_R_0_NGM_antibody_LL_top_no_outliers_color_b_a_plus_b_p.png")
+print(p)
+dev.off()
+
+
+p = ggplot(data = product_data,
+           aes(x = R_0,
+               y = R_0_NGM,
+               color = b_a_plus_b_p)) + rahul_man_figure_theme +
+  scale_color_viridis_c() +
+  geom_point() +
+  xlab("Secondary cases from each \n primary symptomatic case") + ylab("Overall Reproductive Number") +
+  theme(axis.line = element_line(colour = 'black', size = 1))+
+  theme(axis.ticks = element_line(colour = "black", size = 1.5)) +
+  theme(axis.text.x = element_text(size=21)) +
+  theme(axis.text.y = element_text(size=21))
+p
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/top_2_LL_via_antibody_comp_plots/Man_Figs/b_a_profile_R_0_vs_R_0_NGM_antibody_LL_top_no_outliers_color_b_a_plus_b_p_circle_mid_b_p.png")
+print(p)
+dev.off()
+
+
+p = ggplot(data = product_data,
+           aes(x = R_0,
+               y = R_0_NGM,
+               color = b_a)) +
+  rahul_man_figure_theme +
+  scale_color_viridis_c(name = expression(b[a])) +
+  geom_point(size = 5) +
+  scale_x_continuous(breaks=c(seq(2,9))) +
+  scale_y_continuous(breaks=seq(2,5,1)) +
+  coord_cartesian(expand = FALSE, 
+                  xlim = c(1.75, 9), ylim = c(1.75, 5.25)) + 
+  theme_white_background +
+  xlab("Secondary cases from each \n primary symptomatic case") + ylab("Overall Reproductive Number")  +
+  theme(axis.title.x = element_text(face = "plain",
+                                    size = 24),
+        axis.title.y = element_text(face = "plain",
+                                    size = 24))+
+  theme(axis.line = element_line(colour = 'black', size = 1))+
+  theme(axis.ticks = element_line(colour = "black", size = 1.5)) +
+  theme(axis.text.x = element_text(size=21)) +
+  theme(axis.text.y = element_text(size=21))#+ #+
+  # theme(legend.position = c(0.75,0.75)) 
+ # labs(y = expression(R["0 NGM"]),
+ #     x = expression(R[0]))
+p
+
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/top_2_LL_via_antibody_comp_plots/Man_Figs/b_a_profile_R_0_vs_R_0_NGM_antibody_LL_top_no_outliers_color_b_a.png")
+print(p)
+dev.off()
+
+p = ggplot(data = product_data,
+           aes(x = R_0,
+               y = R_0_NGM,
+               color = b_a)) +
+  rahul_man_figure_theme +
+  scale_color_viridis_c(name = expression(b[a])) +
+  geom_point(size = 5) +
+  scale_x_continuous(breaks=c(seq(2,9))) +
+  scale_y_continuous(breaks=seq(2,5,1)) +
+  coord_cartesian(expand = FALSE, 
+                  xlim = c(1.75, 9), ylim = c(1.75, 5.25)) + 
+  theme_white_background +
+  xlab("Secondary cases from each \n primary symptomatic case") + ylab("Overall Reproductive Number")  +
+  theme(axis.line = element_line(colour = 'black', size = 1))+
+  theme(axis.ticks = element_line(colour = "black", size = 1.5)) +
+  theme(axis.text.x = element_text(size=21)) +
+  theme(axis.text.y = element_text(size=21))+ #+
+  # theme(legend.position = c(0.75,0.75)) 
+  labs(y = expression(R[0["NGM"]]),
+       x = expression(R[0]))+
+  theme(axis.title.x = element_text(face = "plain",
+                                    size = 32),
+        axis.title.y = element_text(face = "plain",
+                                    size = 32))
+p
+
+#expression(R[0["NGM"]])
+
+png("../Figures/Profiles/N_12_Model/Man_Figs/b_a_profile_R_0_vs_R_0_NGM_antibody_LL_top_no_outliers_color_b_a_symb_plot.png")
+print(p)
+dev.off()
+
+write.csv(product_data,
+          "../Generated_Data/Profiles/N_12_Model/top_2_LL_data/product_data_for_Fig_3C.csv", row.names = FALSE)
+
+p = ggplot(data = product_data,
+           aes(x = R_0,
+               y = R_0_NGM,
+               color = b_a)) +
+  rahul_man_figure_theme +
+  scale_color_viridis_c(name = expression(b[a])) +
+  geom_point(size = 5) +
+  scale_x_continuous(breaks=c(seq(2,9))) +
+  scale_y_continuous(breaks=seq(2,5,1)) +
+  coord_cartesian(expand = FALSE, 
+                  xlim = c(1.75, 9), ylim = c(1.75, 5.25)) + 
+  theme_white_background +
+  xlab("Secondary cases from each \n primary symptomatic case") + ylab("Overall Reproductive Number")  +
+  theme(axis.title.x = element_text(face = "plain", size = 24),
+        axis.title.y = element_text(face = "plain", size = 24))+
+  theme(axis.line = element_line(colour = 'black', size = 1))+
+  theme(axis.ticks = element_line(colour = "black", size = 1.5)) +
+  theme(axis.text.x = element_text(size=21)) +
+  theme(axis.text.y = element_text(size=21)) #+
+  # theme(legend.position = c(0.75,0.75))
+p
+
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/top_2_LL_via_antibody_comp_plots/Man_Figs/b_a_profile_R_0_vs_R_0_NGM_antibody_LL_top_no_outliers_color_b_a_circle_mid_b_p.png")
+print(p)
+dev.off()
+
+png("../Figures/Profiles/N_12_Model/Man_Figs/b_a_profile_R_0_vs_R_0_NGM_antibody_LL_top_no_outliers_color_b_a_circle_mid_b_p.png")
+print(p)
+dev.off()
+
+
+p = ggplot(data = product_data,
+           aes(x = R_0,
+               y = R_0_NGM,
+               color = b_p)) +
+  rahul_man_figure_theme +
+  scale_color_viridis_c() +
+  geom_point() +
+  xlab("Secondary cases from each \n primary symptomatic case") + ylab("Overall Reproductive Number") +
+  theme(axis.line = element_line(colour = 'black', size = 1))+
+  theme(axis.ticks = element_line(colour = "black", size = 1.5)) +
+  theme(axis.text.x = element_text(size=21)) +
+  theme(axis.text.y = element_text(size=21))
+p
+
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/top_2_LL_via_antibody_comp_plots/Man_Figs/b_a_profile_R_0_vs_R_0_NGM_antibody_LL_top_no_outliers_color_b_p.png")
+print(p)
+dev.off()
+
+p = ggplot(data = product_data,
+           aes(x = R_0,
+               y = R_0_NGM,
+               color = b_p)) +
+  rahul_man_figure_theme +
+  scale_color_viridis_c() +
+  geom_point() +
+  xlab("Secondary cases from each \n primary symptomatic case") + ylab("Overall Reproductive Number") +
+  theme(axis.line = element_line(colour = 'black', size = 1))+
+  theme(axis.ticks = element_line(colour = "black", size = 1.5)) +
+  theme(axis.text.x = element_text(size=21)) +
+  theme(axis.text.y = element_text(size=21))
+p
+
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/top_2_LL_via_antibody_comp_plots/Man_Figs/b_a_profile_R_0_vs_R_0_NGM_antibody_LL_top_no_outliers_color_b_p_circle_mid_b_p.png")
+print(p)
+dev.off()
+
+
+
+p = ggplot(data = product_data,
+           aes(x = R_0,
+               y = R_0_NGM,
+               color = b_a*b_p)) +
+  rahul_man_figure_theme +
+  scale_color_viridis_c(name = expression(paste(b[a], "*", b[p]))) +
+  geom_point(size = 5) +
+  scale_x_continuous(breaks=c(seq(2,9))) +
+  scale_y_continuous(breaks=seq(2,5,1)) +
+  coord_cartesian(expand = FALSE, 
+                  xlim = c(1.75, 9), ylim = c(1.75, 5.25)) + 
+  xlab("Secondary cases from each \n primary symptomatic case") + ylab("Overall Reproductive Number") +
+  theme_white_background +
+  theme(axis.title.x = element_text(face = "plain", size = 24),
+        axis.title.y = element_text(face = "plain", size = 24)) +
+  theme(axis.line = element_line(colour = 'black', size = 1))+
+  theme(axis.ticks = element_line(colour = "black", size = 1.5)) +
+  theme(axis.text.x = element_text(size=21)) +
+  theme(axis.text.y = element_text(size=21))
+p
+
+png("../Figures/Profiles/N_12_Model/Man_Figs/b_a_profile_R_0_vs_R_0_NGM_antibody_LL_top_no_outliers_color_b_a_times_b_p.png")
+print(p)
+dev.off()
+
+p = ggplot(data = product_data,
+           aes(x = R_0,
+               y = R_0_NGM,
+               color = b_a*b_p)) +
+  rahul_man_figure_theme +
+  scale_color_viridis_c(name = expression(paste(b[a], "*", b[p]))) +
+  geom_point(size = 5) +
+  scale_x_continuous(breaks=c(seq(2,9))) +
+  scale_y_continuous(breaks=seq(2,5,1)) +
+  coord_cartesian(expand = FALSE, 
+                  xlim = c(1.75, 9), ylim = c(1.75, 5.25)) + 
+  xlab("Secondary cases from each \n primary symptomatic case") + ylab("Overall Reproductive Number") +
+  theme_white_background +
+  theme(axis.title.x = element_text(face = "plain", size = 24),
+        axis.title.y = element_text(face = "plain", size = 24))+
+  theme(axis.line = element_line(colour = 'black', size = 1))+
+  theme(axis.ticks = element_line(colour = "black", size = 1.5)) +
+  theme(axis.text.x = element_text(size=21)) +
+  theme(axis.text.y = element_text(size=21)) #+
+  # theme(legend.position = c(0.75, 0.75))
+p
+
+png("../Figures/Profiles/N_12_Model/Man_Figs/b_a_profile_R_0_vs_R_0_NGM_antibody_LL_top_no_outliers_color_b_a_times_b_p_circle_mid_b_p.png")
+print(p)
+dev.off()
+
+
+
+p = ggplot(data = product_data,
+           aes(x = b_a*b_p,
+               y = R_0)) +
+  rahul_man_figure_theme +
+  geom_point(size= 5) +
+  ylab("Secondary cases from each \n primary symptomatic case") +
+  xlab(expression(paste(b[a],'*',b[p]))) +
+  theme_white_background+
+  theme(axis.line = element_line(colour = 'black', size = 1))+
+  theme(axis.ticks = element_line(colour = "black", size = 1.5)) +
+  theme(axis.text.x = element_text(size=21)) +
+  theme(axis.text.y = element_text(size=21))
+p
+
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/top_2_LL_via_antibody_comp_plots/Man_Figs/b_a_profile_b_a_times_b_p_vs_R_0_antibody_LL_top_no_outliers.png")
+print(p)
+dev.off()
+
+
+p = ggplot(data = product_data,
+           aes(x = b_a*b_p,
+               y = R_0)) +
+  rahul_man_figure_theme +
+  geom_point(size= 5) +
+  ylab("Secondary cases from each \n primary symptomatic case") +
+  xlab(expression(paste(b[a],'*',b[p]))) +
+  theme_white_background+
+  theme(axis.line = element_line(colour = 'black', size = 1))+
+  theme(axis.ticks = element_line(colour = "black", size = 1.5)) +
+  theme(axis.text.x = element_text(size=21)) +
+  theme(axis.text.y = element_text(size=21))
+p
+
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/top_2_LL_via_antibody_comp_plots/Man_Figs/b_a_profile_b_a_times_b_p_vs_R_0_antibody_LL_top_no_outliers_circle_mid_b_p.png")
+print(p)
+dev.off()
+
+
+
+p = ggplot(data = product_data,
+           aes(x = b_a+b_p,
+               y = R_0)) +
+  rahul_man_figure_theme +
+  geom_point() +
+  ylab("Secondary cases from each \n primary symptomatic case") +
+  theme(axis.line = element_line(colour = 'black', size = 1))+
+  theme(axis.ticks = element_line(colour = "black", size = 1.5)) +
+  theme(axis.text.x = element_text(size=21)) +
+  theme(axis.text.y = element_text(size=21))
+p
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/top_2_LL_via_antibody_comp_plots/Man_Figs/b_a_profile_b_a_plus_b_p_vs_R_0_antibody_LL_top_no_outliers.png")
+print(p)
+dev.off()
+
+
+p = ggplot(data = product_data,
+           aes(x = b_a+b_p,
+               y = R_0)) +
+  rahul_man_figure_theme +
+  geom_point() +
+  ylab("Secondary cases from each \n primary symptomatic case")+
+  theme(axis.line = element_line(colour = 'black', size = 1))+
+  theme(axis.ticks = element_line(colour = "black", size = 1.5)) +
+  theme(axis.text.x = element_text(size=21)) +
+  theme(axis.text.y = element_text(size=21)) 
+p
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/top_2_LL_via_antibody_comp_plots/Man_Figs/b_a_profile_b_a_plus_b_p_vs_R_0_antibody_LL_top_no_outliers_cirlce_mid_b_p.png")
+print(p)
+dev.off()
+
+
+```
+
+
+
+
+
+
+
+```{r}
+head(antibody_top_2_LL_from_b_a_profile_top_2_LL_no_2_outliers)
+p = ggplot(data = antibody_top_2_LL_from_b_a_profile_top_2_LL_no_2_outliers,
+           aes(x = p_H_cond_S,  y = b_a)) +
+  geom_point() + rahul_man_figure_theme
+p
+
+p = ggplot(data = antibody_top_2_LL_from_b_a_profile_top_2_LL_no_2_outliers,
+           aes(x = p_S,  y = b_a)) +
+  geom_point() + rahul_man_figure_theme
+p
+```
+
+```{r}
+head(antibody_top_2_LL_from_b_a_profile_top_2_LL_no_2_outliers)
+p = ggplot(data = antibody_top_2_LL_from_b_a_profile_top_2_LL_no_2_outliers,
+           aes(x = p_S)) +
+  geom_histogram() +
+  rahul_man_figure_theme
+p
+range(antibody_top_2_LL_from_b_a_profile_top_2_LL_no_2_outliers$p_S)
+```
+
+# Averaging over time
+```{r}
+
+FOI_df = data.frame(matrix(nrow = 0, ncol =
+                             ncol(                              antibody_top_2_LL_from_b_a_profile_top_2_LL) + 7))
+colnames(FOI_df) = c(colnames(
+  antibody_top_2_LL_from_b_a_profile_top_2_LL
+), "Mean_Symp_prop", "Mean_Asymp_prop", "Mean_Presymp_Prop", "Mean_Symp", "Mean_Asymp", "Mean_Presymp", "Average_Total_FOI")
+for(param_index in seq(1:nrow(antibody_top_2_LL_from_b_a_profile_top_2_LL))){
+  print(param_index)
+  param_combo =
+    antibody_top_2_LL_from_b_a_profile_top_2_LL[param_index,]
+  param_combo_for_sim = param_combo %>%
+  dplyr::select(-msg, -iter_num, -param_index,
+                -loglik, -nfail, -trace_num, -loglist.se,
+                -Antibody_Mean_LL, -Antibody_LL_SE,
+                -Median_Herd_Immunity, -combo_num,
+                -sim_subset_index, -duration_of_symp_1,
+                -duration_of_symp_2, -duration_of_symp,
+                -gamma_total, -Beta,
+                -R_0_P, -R_0_A, -R_0_S_1, -R_0_S_2,
+                -R_0_NGM)
+  
+  sim_data_big_single_param = simulate(nsim = 101,
+                    seed = 12345,
+                    times = Observed_data$times,
+                    t0 = t0,
+                    rprocess = pomp::euler(rproc,delta.t = 1),
+                    params = param_combo_for_sim,
+                    paramnames = paramnames,
+                    statenames = statenames,
+                    obsnames = obsnames,
+                    accumvars = acumvarnames,
+                    rinit = init,
+                    rmeas = rmeas,
+                    partrans = par_trans,
+                    covar = covar,
+                    format = "data.frame")
+#head(sim_data)
+
+sim_data_single_param_FOI_data = sim_data_big_single_param %>%
+  dplyr::select(time, .id, I_P, I_S_1, I_S_2,
+                I_A, N, beta_t) 
+sim_data_single_param_FOI_data = sim_data_single_param_FOI_data %>%
+  mutate(lambda_FOI_S = (beta_t*(I_S_1 + I_S_2))/N,
+         lambda_FOI_A = (beta_t*param_combo_for_sim$b_a*I_A)/N,
+         lambda_FOI_P = (beta_t*param_combo_for_sim$b_p*I_P)/N) %>%
+  mutate(lambda_FOI_total =
+           lambda_FOI_S + lambda_FOI_A + lambda_FOI_P)
+
+median_FOI_data_single_param = sim_data_single_param_FOI_data %>%
+  group_by(time) %>%
+  summarize(Symptomatic = median(lambda_FOI_S),
+            Asymptomatic = median(lambda_FOI_A),
+            Presymptomatic = median(lambda_FOI_P)) %>%
+  as.data.frame() %>%
+  mutate(Total = Symptomatic + Asymptomatic + Presymptomatic) %>%
+  mutate(Symp_Prop = Symptomatic/Total,
+         Asymp_Prop = Asymptomatic/Total,
+         Presymp_Prop = Presymptomatic/Total)
+
+single_param_avg_FOI = median_FOI_data_single_param %>%
+  summarize(Mean_Symp_prop = mean(Symp_Prop),
+            Mean_Asymp_Prop = mean(Asymp_Prop),
+            Mean_Presymp_Prop = mean(Presymp_Prop),
+            Mean_Symp = mean(Symptomatic),
+            Mean_Asymp = mean(Asymptomatic),
+            Mean_Presymp = mean(Presymptomatic),
+            Average_Total_FOI = mean(Total))
+single_param_FOI_df = cbind(param_combo, single_param_avg_FOI)
+FOI_df = rbind(FOI_df,single_param_FOI_df)
+}
+```
+
+```{r}
+p = ggplot(data = FOI_df,
+           aes(x = b_a, y = b_p,
+               color = Mean_Asymp_Prop)) +
+  geom_point() + scale_color_viridis_c() +
+  rahul_man_figure_theme + theme_white_background
+p
+
+p = ggplot(data = FOI_df,
+           aes(x = b_a, y = Mean_Symp)) +
+  geom_point() +
+  rahul_man_figure_theme + theme_white_background
+p
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/FOI_plots/b_a_vs_Mean_Symp_FOI.png")
+print(p)
+dev.off()
+
+p = ggplot(data = FOI_df,
+           aes(x = b_a, y = Mean_Presymp)) +
+  geom_point() +
+  rahul_man_figure_theme + theme_white_background
+p
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/FOI_plots/b_a_vs_Mean_Presymp_FOI.png")
+print(p)
+dev.off()
+
+p = ggplot(data = FOI_df,
+           aes(x = b_a, y = Mean_Asymp)) +
+  geom_point() +
+  rahul_man_figure_theme + theme_white_background
+p
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/FOI_plots/b_a_vs_Mean_Asymp_FOI.png")
+print(p)
+dev.off()
+
+p = ggplot(data = FOI_df,
+           aes(x = b_a, y = Average_Total_FOI)) +
+  geom_point() +
+  rahul_man_figure_theme + theme_white_background
+p
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/FOI_plots/b_a_vs_Average_Total_FOI.png")
+print(p)
+dev.off()
+
+
+
+p = ggplot(data = FOI_df,
+           aes(x = b_a, y = b_p,
+               color = Mean_Symp_prop)) +
+  geom_point() + scale_color_viridis_c() +
+  rahul_man_figure_theme + theme_white_background
+p
+
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/FOI_plots/b_a_vs_b_p_color_Mean_symp_prop_of_FOI.png")
+print(p)
+dev.off()
+p = ggplot(data = FOI_df,
+           aes(x = b_a, y = b_p,
+               color = (R_0_S_1 + R_0_S_2)/R_0_NGM)) +
+  geom_point() + scale_color_viridis_c(name = "Prop Symp R_0") +
+  rahul_man_figure_theme + theme_white_background
+p
+
+
+p = ggplot(data = FOI_df,
+           aes(x = b_a, y = Mean_Symp_prop)) +
+  geom_point() +
+  rahul_man_figure_theme + theme_white_background
+p
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/FOI_plots/b_a_vs_Mean_symp_prop_of_FOI.png")
+print(p)
+dev.off()
+
+p = ggplot(data = FOI_df,
+           aes(x = b_a, y = Mean_Presymp_Prop)) +
+  geom_point() +
+  rahul_man_figure_theme + theme_white_background
+p
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/FOI_plots/b_a_vs_Mean_Presymp_prop_of_FOI.png")
+print(p)
+dev.off()
+
+p = ggplot(data = FOI_df,
+           aes(x = b_a, y = Mean_Asymp_Prop)) +
+  geom_point() +
+  rahul_man_figure_theme + theme_white_background
+p
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/FOI_plots/b_a_vs_Mean_Asymp_prop_of_FOI.png")
+print(p)
+dev.off()
+
+
+
+
+p = ggplot(data = FOI_df,
+           aes(x = b_a, y = (R_0_S_1 + R_0_S_2)/R_0_NGM)) +
+  geom_point() + ylab("Prop Symp R_0") +
+  rahul_man_figure_theme + theme_white_background
+p
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/FOI_plots/b_a_vs_Symp_prop_of_R_0.png")
+print(p)
+dev.off
+
+p = ggplot(data = FOI_df,
+           aes(x = b_a, y = (R_0_P)/R_0_NGM)) +
+  geom_point() + ylab("Prop Pre-Symp R_0") +
+  rahul_man_figure_theme + theme_white_background
+p
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/FOI_plots/b_a_vs_Pre_Symp_prop_of_R_0.png")
+print(p)
+dev.off()
+
+p = ggplot(data = FOI_df,
+           aes(x = b_a, y = (R_0_A)/R_0_NGM)) +
+  geom_point() + ylab("Prop Asymp R_0") +
+  rahul_man_figure_theme + theme_white_background
+p
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/FOI_plots/b_a_vs_Asymp_prop_of_R_0.png")
+print(p)
+dev.off()
+
+
+p = ggplot(data = FOI_df,
+           aes(x = b_a*b_p,
+               y = Mean_Symp_prop)) +
+  geom_point() +
+  rahul_man_figure_theme + theme_white_background
+p
+```
+
+
+
+# Figure 4 Alternate
+
+### Sub-funcitons
+
+```{r}
+get_median_and_quantiles = function(single_b_a_value_FOI_data, type){
+    if(type == "Symptomatic"){
+      single_b_a_value_FOI_data = single_b_a_value_FOI_data %>%
+        mutate(FOI_contrib = lambda_FOI_S/lambda_FOI_total)
+    }else{
+        if(type == "Asymptomatic"){
+          single_b_a_value_FOI_data = single_b_a_value_FOI_data %>%
+        mutate(FOI_contrib = lambda_FOI_A/lambda_FOI_total)
+        }else{
+          if(type == "Presymptomatic"){
+            single_b_a_value_FOI_data = single_b_a_value_FOI_data %>%
+        mutate(FOI_contrib = lambda_FOI_P/lambda_FOI_total)
+          }else{
+            error("Invalid infection class")
+          }
+        }
+      }
+      single_b_a_value_summary = single_b_a_value_FOI_data %>%
+      group_by(time) %>%
+      summarize(median_FOI_contrib = 
+                  median(FOI_contrib),
+                upper_quantile_FOI_contrib = quantile(FOI_contrib, probs = 0.975),
+                lower_quantile_FOI_contrib = quantile(FOI_contrib, probs = 0.025)
+                ) %>%
+        as.data.frame()%>%
+        mutate(Infection_Type = type)
+}
+```
+
+### Define sampling times for FOI
+```{r}
+head(Observed_data)
+peak_time = Observed_data %>%
+  filter(Y == max(Y)) %>%
+  dplyr::select(times) %>%
+  as.numeric()
+
+pre_peak_time = peak_time - 28
+post_peak_time = peak_time + 28
+p = ggplot(data = Observed_data, aes(x = times, y = Y)) + geom_point() + geom_line() + rahul_man_figure_theme +
+  geom_vline(xintercept = pre_peak_time, color = 'blue',
+             size = 1.5) +
+  geom_vline(xintercept = peak_time, color = 'red',
+             size = 1.5) +
+  geom_vline(xintercept = post_peak_time, color = 'orange',
+             size = 1.5) +
+  theme_white_background
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/FOI_plots/sampling_points_for_FOI.png")
+print(p)
+dev.off()
+
+
+```
+
+### Calculate summary statistics for FOI at each sampling time for each $b_a$ including outlier  value
+```{r}
+
+b_a_points = unique(antibody_top_2_LL_from_b_a_profile_top_2_LL$b_a)
+
+FOI_summary = data.frame(matrix(nrow = 0, ncol =6 ))
+colnames(FOI_summary) = c("time" ,"median_FOI_contrib",
+                          "upper_quantile_FOI_contrib",
+                          "lower_quantile_FOI_contrib",
+                          "Infection_Type", "b_a") 
+for(b_a_index in seq(1:length(b_a_points))){
+  print(b_a_index)
+  single_b_a_value = b_a_points[b_a_index]
+  param_combs_with_b_a_index_value =
+    antibody_top_2_LL_from_b_a_profile_top_2_LL %>%
+    filter(b_a == single_b_a_value)
+  
+  pre_peak_single_b_a_value_FOI_data =
+    data.frame(matrix(nrow = 0, ncol = 13))
+  colnames(pre_peak_single_b_a_value_FOI_data) =
+    c("time",".id", "lambda_FOI_S" ,"lambda_FOI_A",
+      "lambda_FOI_P","lambda_FOI_total", "param_index")
+  post_peak_single_b_a_value_FOI_data =
+    data.frame(matrix(nrow = 0, ncol = 13))
+  colnames(post_peak_single_b_a_value_FOI_data) =
+    c("time",".id", "lambda_FOI_S" ,"lambda_FOI_A",
+      "lambda_FOI_P","lambda_FOI_total", "param_index")
+  peak_single_b_a_value_FOI_data =
+    data.frame(matrix(nrow = 0, ncol = 13))
+  colnames(peak_single_b_a_value_FOI_data) =
+    c("time",".id", "lambda_FOI_S" ,"lambda_FOI_A",
+      "lambda_FOI_P","lambda_FOI_total", "param_index")
+  
+  for(param_index in
+      seq(1:nrow(param_combs_with_b_a_index_value))){
+    single_param_combo =
+      param_combs_with_b_a_index_value[param_index,]
+    param_combo_for_sim = single_param_combo %>%
+  dplyr::select(-msg, -iter_num, -param_index,
+                -loglik, -nfail, -trace_num, -loglist.se,
+                -Antibody_Mean_LL, -Antibody_LL_SE,
+                -Median_Herd_Immunity, -combo_num,
+                -sim_subset_index, -duration_of_symp_1,
+                -duration_of_symp_2, -duration_of_symp,
+                -gamma_total, -Beta,
+                -R_0_P, -R_0_A, -R_0_S_1, -R_0_S_2,
+                -R_0_NGM)
+  
+  sim_data_single_param = simulate(nsim = 101,
+                    seed = 12345,
+                    times = Observed_data$times,
+                    t0 = t0,
+                    rprocess = pomp::euler(rproc,delta.t = 1),
+                    params = param_combo_for_sim,
+                    paramnames = paramnames,
+                    statenames = statenames,
+                    obsnames = obsnames,
+                    accumvars = acumvarnames,
+                    rinit = init,
+                    rmeas = rmeas,
+                    partrans = par_trans,
+                    covar = covar,
+                    format = "data.frame")
+  #head(sim_data)
+  
+  sim_data_single_param_FOI_data = sim_data_single_param %>%
+  dplyr::select(time, .id, I_P, I_S_1, I_S_2,
+                I_A, N, beta_t) 
+  sim_data_single_param_FOI_data = sim_data_single_param_FOI_data %>%
+  mutate(lambda_FOI_S = (beta_t*(I_S_1 + I_S_2))/N,
+         lambda_FOI_A = (beta_t*param_combo_for_sim$b_a*I_A)/N,
+         lambda_FOI_P = (beta_t*param_combo_for_sim$b_p*I_P)/N) %>%
+  mutate(lambda_FOI_total =
+           lambda_FOI_S + lambda_FOI_A + lambda_FOI_P) %>%
+  dplyr::select(time, .id, lambda_FOI_S, lambda_FOI_A, lambda_FOI_P,
+                lambda_FOI_total) %>%
+  mutate(param_index = param_index)
+  pre_peak_single_param_FOI_data =
+  sim_data_single_param_FOI_data %>%
+  filter(time == pre_peak_time)
+  peak_time_single_param_FOI_data = 
+    sim_data_single_param_FOI_data %>%
+    filter(time == peak_time)
+  post_peak_single_param_FOI_data =
+    sim_data_single_param_FOI_data %>%
+    filter(time == post_peak_time)
+
+  pre_peak_single_b_a_value_FOI_data = rbind(
+    pre_peak_single_b_a_value_FOI_data,
+    pre_peak_single_param_FOI_data
+)
+
+peak_single_b_a_value_FOI_data = rbind(
+  peak_single_b_a_value_FOI_data,
+  peak_time_single_param_FOI_data
+)
+
+post_peak_single_b_a_value_FOI_data = rbind(
+  post_peak_single_b_a_value_FOI_data,
+  post_peak_single_param_FOI_data
+)
+
+    
+    
+  }
+  
+  ### Calculate % contribution of FOI from each category 
+  single_b_a_value_FOI_data = rbind(
+    pre_peak_single_b_a_value_FOI_data,
+    peak_single_b_a_value_FOI_data) %>%
+    rbind(post_peak_single_b_a_value_FOI_data)
+  single_b_a_Presymp_summary = get_median_and_quantiles(
+    single_b_a_value_FOI_data = single_b_a_value_FOI_data, 
+    type = "Presymptomatic")
+  
+  single_b_a_Symp_summary = get_median_and_quantiles(
+    single_b_a_value_FOI_data = single_b_a_value_FOI_data, 
+    type = "Symptomatic")
+  
+  single_b_a_Asymp_summary = get_median_and_quantiles(
+    single_b_a_value_FOI_data = single_b_a_value_FOI_data, 
+    type = "Asymptomatic")
+  
+  single_b_a_FOI_summary = rbind(single_b_a_Presymp_summary,
+                                 single_b_a_Symp_summary) %>%
+    rbind(single_b_a_Asymp_summary) %>%
+    mutate(b_a = single_b_a_value)
+
+  FOI_summary = FOI_summary %>%
+    rbind(single_b_a_FOI_summary)
+}
+```
+### Isolate times
+```{r}
+peak_FOI_summary = FOI_summary %>%
+  filter(time == peak_time)
+
+pre_peak_FOI_summary = FOI_summary %>%
+  filter(time == pre_peak_time)
+post_peak_FOI_summary = FOI_summary %>%
+  filter(time == post_peak_time)
+```
+
+
+## Plot FOI
+### Peak
+```{r}
+
+p = ggplot(data= peak_FOI_summary,
+           aes(x = b_a,
+               y = median_FOI_contrib,
+               color = Infection_Type)) +
+  geom_point() +
+  geom_line() + geom_ribbon(aes(ymin = lower_quantile_FOI_contrib,
+                                ymax = upper_quantile_FOI_contrib,
+                                fill = Infection_Type), alpha = 0.5) +
+  rahul_man_figure_theme +
+  theme_white_background + xlab("Asymptomatic  Transmission Rate ($b_a$) ") +
+  ylab("% Contribution to the Force of Infection at Peak")
+p
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/FOI_plots/Timepoint_Analysis/b_a_vs_FOI_contrib_line_plot_peak_include_outlier.png")
+print(p)
+dev.off()
+```
+
+
+
+
+
+### Pre-Peak
+```{r}
+
+p = ggplot(data= pre_peak_FOI_summary,
+           aes(x = b_a,
+               y = median_FOI_contrib,
+               color = Infection_Type)) +
+  geom_point() +
+  geom_line() + geom_ribbon(aes(ymin = lower_quantile_FOI_contrib,
+                                ymax = upper_quantile_FOI_contrib,
+                                fill = Infection_Type), alpha = 0.5) +
+  rahul_man_figure_theme +
+  theme_white_background + xlab("Asymptomatic  Transmission Rate ($b_a$) ") +
+  ylab("% Contribution to the Force of Infection 4 Weeks Before Peak")
+p
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/FOI_plots/Timepoint_Analysis/b_a_vs_FOI_contrib_line_plot_pre_peak_include_outlier.png")
+print(p)
+dev.off()
+```
+
+
+
+
+
+### Post-Peak
+```{r}
+
+p = ggplot(data= post_peak_FOI_summary,
+           aes(x = b_a,
+               y = median_FOI_contrib,
+               color = Infection_Type)) +
+  geom_point() +
+  geom_line() + geom_ribbon(aes(ymin = lower_quantile_FOI_contrib,
+                                ymax = upper_quantile_FOI_contrib,
+                                fill = Infection_Type), alpha = 0.5) +
+  rahul_man_figure_theme +
+  theme_white_background + xlab("Asymptomatic  Transmission Rate ($b_a$) ") +
+  ylab("% Contribution to the Force of Infection 4 Weeks After Peak")
+p
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/FOI_plots/Timepoint_Analysis/b_a_vs_FOI_contrib_line_plot_post_peak_include_outlier.png")
+print(p)
+dev.off()
+```
+
+
+### Calculate summary statistics for FOI at each sampling time for each $b_a$ excluding outlier  value
+```{r}
+
+second_outlier = antibody_top_2_LL_from_b_a_profile_top_2_LL_no_outlier %>%
+  filter(b_p < 0.02)
+
+
+
+b_a_points_no_outlier = unique(antibody_top_2_LL_from_b_a_profile_top_2_LL_no_2_outliers$b_a)
+
+FOI_summary_no_outlier = data.frame(matrix(nrow = 0, ncol =6 ))
+colnames(FOI_summary_no_outlier) = c("time" ,"median_FOI_contrib",
+                          "upper_quantile_FOI_contrib",
+                          "lower_quantile_FOI_contrib",
+                          "Infection_Type", "b_a") 
+for(b_a_index in seq(1:length(b_a_points_no_outlier))){
+  print(b_a_index)
+  single_b_a_value = b_a_points_no_outlier[b_a_index]
+  param_combs_with_b_a_index_value_no_outlier =
+    antibody_top_2_LL_from_b_a_profile_top_2_LL_no_2_outliers %>%
+    filter(b_a == single_b_a_value)
+  
+  pre_peak_single_b_a_value_FOI_data =
+    data.frame(matrix(nrow = 0, ncol = 13))
+  colnames(pre_peak_single_b_a_value_FOI_data) =
+    c("time",".id", "lambda_FOI_S" ,"lambda_FOI_A",
+      "lambda_FOI_P","lambda_FOI_total", "param_index")
+  post_peak_single_b_a_value_FOI_data =
+    data.frame(matrix(nrow = 0, ncol = 13))
+  colnames(post_peak_single_b_a_value_FOI_data) =
+    c("time",".id", "lambda_FOI_S" ,"lambda_FOI_A",
+      "lambda_FOI_P","lambda_FOI_total", "param_index")
+  peak_single_b_a_value_FOI_data =
+    data.frame(matrix(nrow = 0, ncol = 13))
+  colnames(peak_single_b_a_value_FOI_data) =
+    c("time",".id", "lambda_FOI_S" ,"lambda_FOI_A",
+      "lambda_FOI_P","lambda_FOI_total", "param_index")
+  
+  for(param_index in
+      seq(1:nrow(param_combs_with_b_a_index_value_no_outlier))){
+    single_param_combo =
+      param_combs_with_b_a_index_value_no_outlier[param_index,]
+    param_combo_for_sim = single_param_combo %>%
+  dplyr::select(-msg, -iter_num, -param_index,
+                -loglik, -nfail, -trace_num, -loglist.se,
+                -Antibody_Mean_LL, -Antibody_LL_SE,
+                -Median_Herd_Immunity, -combo_num,
+                -sim_subset_index, -duration_of_symp_1,
+                -duration_of_symp_2, -duration_of_symp,
+                -gamma_total, -Beta,
+                -R_0_P, -R_0_A, -R_0_S_1, -R_0_S_2,
+                -R_0_NGM)
+  
+  sim_data_single_param = simulate(nsim = 101,
+                    seed = 12345,
+                    times = Observed_data$times,
+                    t0 = t0,
+                    rprocess = pomp::euler(rproc,delta.t = 1),
+                    params = param_combo_for_sim,
+                    paramnames = paramnames,
+                    statenames = statenames,
+                    obsnames = obsnames,
+                    accumvars = acumvarnames,
+                    rinit = init,
+                    rmeas = rmeas,
+                    partrans = par_trans,
+                    covar = covar,
+                    format = "data.frame")
+  #head(sim_data)
+  
+  sim_data_single_param_FOI_data = sim_data_single_param %>%
+  dplyr::select(time, .id, I_P, I_S_1, I_S_2,
+                I_A, N, beta_t) 
+  sim_data_single_param_FOI_data = sim_data_single_param_FOI_data %>%
+  mutate(lambda_FOI_S = (beta_t*(I_S_1 + I_S_2))/N,
+         lambda_FOI_A = (beta_t*param_combo_for_sim$b_a*I_A)/N,
+         lambda_FOI_P = (beta_t*param_combo_for_sim$b_p*I_P)/N) %>%
+  mutate(lambda_FOI_total =
+           lambda_FOI_S + lambda_FOI_A + lambda_FOI_P) %>%
+  dplyr::select(time, .id, lambda_FOI_S, lambda_FOI_A, lambda_FOI_P,
+                lambda_FOI_total) %>%
+  mutate(param_index = param_index)
+  pre_peak_single_param_FOI_data =
+  sim_data_single_param_FOI_data %>%
+  filter(time == pre_peak_time)
+  peak_time_single_param_FOI_data = 
+    sim_data_single_param_FOI_data %>%
+    filter(time == peak_time)
+  post_peak_single_param_FOI_data =
+    sim_data_single_param_FOI_data %>%
+    filter(time == post_peak_time)
+
+  pre_peak_single_b_a_value_FOI_data = rbind(
+    pre_peak_single_b_a_value_FOI_data,
+    pre_peak_single_param_FOI_data
+)
+
+peak_single_b_a_value_FOI_data = rbind(
+  peak_single_b_a_value_FOI_data,
+  peak_time_single_param_FOI_data
+)
+
+post_peak_single_b_a_value_FOI_data = rbind(
+  post_peak_single_b_a_value_FOI_data,
+  post_peak_single_param_FOI_data
+)
+
+    
+    
+  }
+  
+  ### Calculate % contribution of FOI from each category 
+  single_b_a_value_FOI_data = rbind(
+    pre_peak_single_b_a_value_FOI_data,
+    peak_single_b_a_value_FOI_data) %>%
+    rbind(post_peak_single_b_a_value_FOI_data)
+  single_b_a_Presymp_summary = get_median_and_quantiles(
+    single_b_a_value_FOI_data = single_b_a_value_FOI_data, 
+    type = "Presymptomatic")
+  
+  single_b_a_Symp_summary = get_median_and_quantiles(
+    single_b_a_value_FOI_data = single_b_a_value_FOI_data, 
+    type = "Symptomatic")
+  
+  single_b_a_Asymp_summary = get_median_and_quantiles(
+    single_b_a_value_FOI_data = single_b_a_value_FOI_data, 
+    type = "Asymptomatic")
+  
+  single_b_a_FOI_summary = rbind(single_b_a_Presymp_summary,
+                                 single_b_a_Symp_summary) %>%
+    rbind(single_b_a_Asymp_summary) %>%
+    mutate(b_a = single_b_a_value)
+
+  FOI_summary_no_outlier = FOI_summary_no_outlier %>%
+    rbind(single_b_a_FOI_summary)
+}
+```
+
+### Isolate times
+```{r}
+peak_FOI_summary_no_outlier = FOI_summary_no_outlier %>%
+  filter(time == peak_time)
+
+pre_peak_FOI_summary_no_outlier = FOI_summary_no_outlier %>%
+  filter(time == pre_peak_time)
+post_peak_FOI_summary_no_outlier = FOI_summary_no_outlier %>%
+  filter(time == post_peak_time)
+```
+
+
+### Peak
+```{r}
+
+p = ggplot(data= peak_FOI_summary_no_outlier,
+           aes(x = b_a,
+               y = median_FOI_contrib,
+               color = Infection_Type)) +
+  geom_point() +
+  geom_line() + geom_ribbon(aes(ymin = lower_quantile_FOI_contrib,
+                                ymax = upper_quantile_FOI_contrib,
+                                fill = Infection_Type), alpha = 0.5) +
+  rahul_man_figure_theme +
+  theme_white_background + xlab("Asymptomatic  Transmission Rate ($b_a$) ") +
+  ylab("% Contribution to the Force of Infection at Peak")
+p
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/FOI_plots/Timepoint_Analysis/b_a_vs_FOI_contrib_line_plot_peak_no_outlier.png")
+print(p)
+dev.off()
+```
+
+
+
+
+
+### Pre-Peak
+```{r}
+
+p = ggplot(data= pre_peak_FOI_summary_no_outlier,
+           aes(x = b_a,
+               y = median_FOI_contrib,
+               color = Infection_Type)) +
+  geom_point() +
+  geom_line() + geom_ribbon(aes(ymin = lower_quantile_FOI_contrib,
+                                ymax = upper_quantile_FOI_contrib,
+                                fill = Infection_Type), alpha = 0.5) +
+  rahul_man_figure_theme +
+  theme_white_background + xlab("Asymptomatic  Transmission Rate ($b_a$) ") +
+  ylab("% Contribution to the Force of Infection 4 Weeks Before Peak")
+p
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/FOI_plots/Timepoint_Analysis/b_a_vs_FOI_contrib_line_plot_pre_peak_no_outlier.png")
+print(p)
+dev.off()
+```
+
+
+
+
+
+### Post-Peak
+```{r}
+
+p = ggplot(data= post_peak_FOI_summary_no_outlier,
+           aes(x = b_a,
+               y = median_FOI_contrib,
+               color = Infection_Type)) +
+  geom_point() +
+  geom_line() + geom_ribbon(aes(ymin = lower_quantile_FOI_contrib,
+                                ymax = upper_quantile_FOI_contrib,
+                                fill = Infection_Type), alpha = 0.5) +
+  rahul_man_figure_theme +
+  theme_white_background + xlab("Asymptomatic  Transmission Rate ($b_a$) ") +
+  ylab("% Contribution to the Force of Infection 4 Weeks After Peak")
+p
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/FOI_plots/Timepoint_Analysis/b_a_vs_FOI_contrib_line_plot_post_peak_no_outlier.png")
+print(p)
+dev.off()
+```
+
+
+### Peak median density plot
+```{r}
+p = ggplot(data=peak_FOI_summary_no_outlier,
+       aes(x=factor(b_a), y=median_FOI_contrib, fill=Infection_Type)) +
+    geom_bar(stat="identity", position="stack") +
+  geom_errorbar(aes(ymin = lower_quantile_FOI_contrib,
+                ymax = upper_quantile_FOI_contrib))
+p
+```
+### Sub-function for stacking data
+```{r}
+library(tidyr)
+
+
+
+stack_FOI_error_bars = function(FOI_summary_no_outlier){
+  
+test_df_asymp =FOI_summary_no_outlier %>%
+  filter(Infection_Type == "Asymptomatic")
+
+spreaded_median_FOI = FOI_summary_no_outlier %>%
+  spread(Infection_Type, median_FOI_contrib) 
+median_asymp_FOI = spreaded_median_FOI %>%
+  dplyr::select(b_a, Asymptomatic_Median = Asymptomatic) %>%
+  na.omit()
+median_symp_FOI = spreaded_median_FOI %>%
+  dplyr::select(b_a, Symptomatic_Median = Symptomatic) %>%
+  na.omit()
+
+median_presymp_FOI = spreaded_median_FOI %>%
+  dplyr::select(b_a, Presymptomatic_Median = Presymptomatic) %>%
+  na.omit()
+
+median_combined_FOI = median_asymp_FOI %>%
+  join(median_presymp_FOI) %>%
+  join(median_symp_FOI)
+
+FOI_summary_no_outlier_with_eb = FOI_summary_no_outlier %>%
+  join(median_combined_FOI) %>%
+  mutate(Add_Presymp = as.numeric(Infection_Type == "Asymptomatic"),
+         Add_Symp = as.numeric(Infection_Type %in% c("Asymptomatic", "Presymptomatic" )),
+         Stacked_Median_Adjustment = Add_Presymp*Presymptomatic_Median +
+           Add_Symp*Symptomatic_Median)
+
+FOI_summary_no_outlier_with_eb = FOI_summary_no_outlier_with_eb%>%
+  mutate(b_a_factor = as.factor(b_a))
+
+return(FOI_summary_no_outlier_with_eb)
+}
+```
+### Stack error bars
+```{r}
+peak_FOI_summary_no_outlier_with_eb = stack_FOI_error_bars(
+  FOI_summary_no_outlier = peak_FOI_summary_no_outlier)
+pre_peak_FOI_summary_no_outlier_with_eb = stack_FOI_error_bars(
+  FOI_summary_no_outlier = pre_peak_FOI_summary_no_outlier)
+post_peak_FOI_summary_no_outlier_with_eb = stack_FOI_error_bars(
+  FOI_summary_no_outlier = post_peak_FOI_summary_no_outlier
+)
+
+all_b_a_levels = levels(peak_FOI_summary_no_outlier_with_eb$b_a_factor)
+b_a_level_tickmarks = all_b_a_levels[c(1,7,13,18,21)]
+b_a_tick_labels = c("0", "0.24", "0.52", "0.79", "0.97")
+
+```
+
+### Plot stacked bar plot for peak
+```{r}
+
+p = ggplot(data=peak_FOI_summary_no_outlier_with_eb,
+       aes(x=b_a_factor, y=median_FOI_contrib, fill=Infection_Type)) +
+    geom_bar(stat="identity", position="stack") +
+  geom_errorbar(aes(ymin = Stacked_Median_Adjustment + lower_quantile_FOI_contrib,
+                ymax = Stacked_Median_Adjustment + upper_quantile_FOI_contrib)) +
+  scale_x_discrete(breaks = b_a_level_tickmarks,
+                   labels = b_a_tick_labels) +
+               xlab('Relative Asymptomatic  \n Transmission Rate') +
+  ylab("Contribution to  Force of Infection At Peak ") +
+  scale_fill_discrete(name = "Infection \n Type") +
+  rahul_man_figure_theme + theme_white_background +
+  theme(axis.title.x = element_text(face = "plain", size = 12),
+        axis.title.y = element_text(face = "plain", size = 12),
+        axis.text.x = element_text(face = "plain", size = 11),
+        axis.text.y = element_text(face = "plain", size = 11),
+        legend.text = element_text(face = "plain", size = 11),
+        legend.title = element_text(face = "plain", size = 12))+
+  theme(axis.line = element_line(colour = 'black', size = 1))+
+  theme(axis.ticks = element_line(colour = "black", size = 1.5)) 
+p
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/FOI_plots/Timepoint_Analysis/FOI_Stacked_Bar_Plot_Peak_exclude_two_outliers.png")
+print(p)
+dev.off()
+
+pdf("../Figures/Profiles/N_12_Model/Man_Figs/stacked_bar_plot_b_a_vs_cont_to_FOI_at_peak_exclude_two_outliers.pdf")
+print(p)
+dev.off()
+
+p = ggplot(data=peak_FOI_summary_no_outlier_with_eb,
+       aes(x=b_a_factor, y=median_FOI_contrib, fill=Infection_Type)) +
+    geom_bar(stat="identity", position="stack") +
+  geom_errorbar(aes(ymin = Stacked_Median_Adjustment + lower_quantile_FOI_contrib,
+                ymax = Stacked_Median_Adjustment + upper_quantile_FOI_contrib)) +
+  scale_x_discrete(breaks = b_a_level_tickmarks,
+                   labels = b_a_tick_labels) +
+               xlab('Relative Asymptomatic  \n Transmission Rate') +
+  ylab("Contribution to  Force of Infection At Peak ") +
+  scale_fill_discrete(name = "Infection \n Type") +
+  rahul_man_figure_theme + theme_white_background +
+  theme(axis.title.x = element_text(face = "plain", size = 12),
+        axis.title.y = element_text(face = "plain", size = 12),
+        axis.text.x = element_text(face = "plain", size = 11),
+        axis.text.y = element_text(face = "plain", size = 11),
+        legend.text = element_text(face = "plain", size = 11),
+        legend.title = element_text(face = "plain", size = 12)) +
+  scale_fill_grey(name = "Infection \n Type")+
+  theme(axis.line = element_line(colour = 'black', size = 1))+
+  theme(axis.ticks = element_line(colour = "black", size = 1.5)) 
+p
+pdf("../Figures/Profiles/N_12_Model/Man_Figs/stacked_bar_plot_b_a_vs_cont_to_FOI_at_peak_exclude_two_outliers_greyscale.pdf")
+print(p)
+dev.off()
+
+```
+
+### Plot stacked bar plot for 4 weeks before peak
+```{r}
+
+p = ggplot(data=pre_peak_FOI_summary_no_outlier_with_eb,
+       aes(x=b_a_factor, y=median_FOI_contrib, fill=Infection_Type)) +
+    geom_bar(stat="identity", position="stack") +
+  geom_errorbar(aes(ymin = Stacked_Median_Adjustment + lower_quantile_FOI_contrib,
+                ymax = Stacked_Median_Adjustment + upper_quantile_FOI_contrib)) +
+  scale_x_discrete(breaks = b_a_level_tickmarks,
+                   labels = b_a_tick_labels) +
+               xlab('Relative Asymptomatic  \n Transmission Rate') +
+  ylab("Contribution to  Force of Infection \n 4 Weeks Before Peak ") +
+  scale_fill_discrete(name = "Infection \n Type") +
+  rahul_man_figure_theme + theme_white_background +
+  theme(axis.title.x = element_text(face = "plain", size = 12),
+        axis.title.y = element_text(face = "plain", size = 12),
+        axis.text.x = element_text(face = "plain", size = 11),
+        axis.text.y = element_text(face = "plain", size = 11),
+        legend.text = element_text(face = "plain", size = 11),
+        legend.title = element_text(face = "plain", size = 12))
+p
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/FOI_plots/Timepoint_Analysis/FOI_Stacked_Bar_Plot_Pre_Peak_exclude_two_outliers.png")
+print(p)
+dev.off()
+```
+### Plot stacked bar plot for 4 weeks after peak
+```{r}
+
+p = ggplot(data=post_peak_FOI_summary_no_outlier_with_eb,
+       aes(x=b_a_factor, y=median_FOI_contrib, fill=Infection_Type)) +
+    geom_bar(stat="identity", position="stack") +
+  geom_errorbar(aes(ymin = Stacked_Median_Adjustment + lower_quantile_FOI_contrib,
+                ymax = Stacked_Median_Adjustment + upper_quantile_FOI_contrib)) +
+  scale_x_discrete(breaks = b_a_level_tickmarks,
+                   labels = b_a_tick_labels) +
+               xlab('Relative Asymptomatic  \n Transmission Rate') +
+  ylab("Contribution to  Force of Infection \n 4 Weeks After Peak ") +
+  scale_fill_discrete(name = "Infection \n Type") +
+  rahul_man_figure_theme + theme_white_background +
+  theme(axis.title.x = element_text(face = "plain", size = 12),
+        axis.title.y = element_text(face = "plain", size = 12),
+        axis.text.x = element_text(face = "plain", size = 11),
+        axis.text.y = element_text(face = "plain", size = 11),
+        legend.text = element_text(face = "plain", size = 11),
+        legend.title = element_text(face = "plain", size = 12))
+p
+png("../Figures/Profiles/N_12_Model/top_2_LL_sim_plots/FOI_plots/Timepoint_Analysis/FOI_Stacked_Bar_Plot_Post_Peak_exclude_two_outliers.png")
+print(p)
+dev.off()
+```
+
+
+# Sup Figures
+
+```{r}
+p = ggplot(data = antibody_top_2_LL_from_b_a_profile_top_2_LL_no_2_outliers,
+           aes(x = R_0,
+               y = R_0_NGM,
+               color = b_p)) +
+  geom_point(size = 5) +
+  scale_color_viridis_c() +
+  rahul_man_figure_theme +
+  theme_white_background +
+  scale_x_continuous(breaks=c(seq(2,10,1), 15, 18)) +
+  scale_y_continuous(breaks=seq(2,5,1)) +
+  coord_cartesian(expand = FALSE, #turn off axis expansion (padding)
+                  xlim = c(1.75, 9), ylim = c(1.75, 5.25)) #manually set limits
+p
+
+png(paste0("../Figures/Profiles/", model_name, "_Model/Sup_Figs/",
+           "R_0_vs_R_0_NGM_color_by_b_p", model_name,
+           "_model_top_2_antibody_LL_from_b_a_profile_peak_LL_no_2_outliers.png"))
+print(p)
+dev.off()
+```
+
