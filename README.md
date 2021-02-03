@@ -52,4 +52,4 @@ See the file "Plot_code_for_p_S_profile_serology_LL_sim_traj_vs_obs_fit.Rmd" for
 For the validation analysis code used for MIF fitting to big/small b_a parameter simulated trajectories for the SEIAR grid search and SEPIAR b_a profile search along with code used to generate the profile combinations for b_a profile, please see the last section of the main implementation file (NYC_Covid_Model_SEIAR_and_SEPIAR.Rmd).
 
 ## IFR Calculations
-The file "IFR_Calculations" contains the code used to calculate the infection fatality rate.
+The file "IFR_Calculations.Rmd" contains the code used to calculate the infection fatality rate.
