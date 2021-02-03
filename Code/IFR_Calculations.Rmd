@@ -1,0 +1,349 @@
+---
+title: "IFR_Calcualtions"
+author: "Rahul Subramanian"
+date: "11/9/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Load essential libraries and plot themes
+```{r}
+source("load_libraries_essential.R")
+source("rahul_theme.R")
+library(zoo)
+library(stringr)
+library(pomp)
+```
+
+
+
+## Declare model name
+```{r}
+full_model_name = "NYC_Covid_Model_Hyrbid_Model_1_Pre-Symp_Compartment_Set_b_p_to_0"
+model_name = "N_12"
+rda_index = 0
+rds_index = 0
+
+```
+
+### Declare profile variable
+```{r}
+profile_var = "b_a"
+```
+
+### Load trajectories and observed data used for fitting
+```{r}
+big_b_a_single_traj_data = read.csv(
+  "../Generated_Data/Representative_Simulations/big_b_a_single_sim_traj_data.csv")
+head(big_b_a_single_traj_data)
+small_b_a_single_traj_data = read.csv(
+  "../Generated_Data/Representative_Simulations/small_b_a_single_sim_traj_data.csv")
+head(small_b_a_single_traj_data)
+
+Observed_data = read.csv(paste0(
+  "../Generated_Data/observed_data_",
+  model_name, ".csv"))
+head(Observed_data)
+
+```
+
+```{r}
+case_hosp_death_raw = read.csv(file = "../Down_Data/case-hosp-death.csv")
+head(case_hosp_death_raw)
+```
+```{r}
+true_start_date = as.Date("2020-03-01")
+t0 = 0
+start_of_year = as.Date("2020-01-01")
+first_saturday_in_year = as.Date("2020-01-04")
+```
+
+
+```{r}
+obs_death_data = case_hosp_death_raw %>%
+  mutate(Date = as.Date(DATE_OF_INTEREST, "%m/%d/%Y")) %>%
+  mutate(times = as.numeric(Date - true_start_date)) %>%
+  filter(times >= 0) %>%
+  mutate(Cum_Deaths = cumsum(DEATH_COUNT)) %>%
+  mutate(Cum_Hosp = cumsum(HOSPITALIZED_COUNT)) %>%
+  dplyr::select(times, Cum_Deaths, Cum_Hosp) %>%
+  mutate(Death_Hosp_Ratio = Cum_Deaths/Cum_Hosp)
+obs_death_data
+
+```
+
+
+```{r}
+p = ggplot(data = obs_death_data,aes(x = times,
+                                     y = Cum_Deaths)) +
+  geom_point()
+p
+
+p = ggplot(data = obs_death_data,aes(x = times,
+                                     y = Cum_Hosp)) +
+  geom_point()
+p
+
+p = ggplot(data = obs_death_data,aes(x = times,
+                                     y = Death_Hosp_Ratio)) +
+  geom_point()
+p
+
+obs_death_data_melt = obs_death_data %>%
+    melt(id.vars = c("times"))
+
+```
+
+```{r}
+p = ggplot(data = obs_death_data_melt,aes(x = times,
+                                     y = value)) +
+  facet_wrap(~variable, ncol = 1, scales = "free_y") +
+  geom_point()
+p
+```
+
+### Estimate proprotion of hosptializations that result in deaths from NYC data
+```{r}
+
+nyc_hosp_death_ratio = obs_death_data$Death_Hosp_Ratio[nrow(obs_death_data)]
+nyc_hosp_death_ratio
+```
+
+
+```{r}
+obs_cases_and_deaths_data = obs_death_data %>%
+  join(Observed_data) %>%
+  filter(times > 0) %>%
+  filter(times < 90) %>%
+  mutate(Cum_Cases = cumsum(Y)) %>%
+  mutate(IFR_Obs = Cum_Deaths/Cum_Cases)
+
+```
+
+```{r}
+p = ggplot(data = obs_cases_and_deaths_data,aes(x = times,
+                                     y = IFR_Obs)) +
+  geom_point()
+p
+```
+
+```{r}
+load(file = paste0("../Generated_Data/Profiles/", model_name, "_Model/top_2_LL_data/b_a_profile_antibody_surface_plot_data_with_outlier.RData"))
+head(antibody_top_2_LL_from_b_a_profile_top_2_LL)
+range(antibody_top_2_LL_from_b_a_profile_top_2_LL$Antibody_Mean_LL)
+IFR_top_2LL_param_df = antibody_top_2_LL_from_b_a_profile_top_2_LL %>%
+  dplyr::select(Antibody_Mean_LL, iter_num, param_index, loglik,
+                Median_Herd_Immunity, b_a, R_0, R_0_NGM, p_S, p_H_cond_S) %>%
+  mutate(IFR_from_param = p_S*p_H_cond_S*nyc_hosp_death_ratio,
+         IFR_all_cases = p_S*p_H_cond_S*nyc_hosp_death_ratio,
+         IFR_symp_cases = p_H_cond_S*nyc_hosp_death_ratio)
+
+range(IFR_top_2LL_param_df$IFR_from_param)
+IFR_min_param_est = min(IFR_top_2LL_param_df$IFR_from_param)
+IFR_max_param_est = max(IFR_top_2LL_param_df$IFR_from_param)
+
+
+p = ggplot(data = IFR_top_2LL_param_df,
+           aes(x = IFR_from_param)) +geom_histogram() +
+  rahul_man_figure_theme
+p
+library(tidyr)
+
+p = ggplot(data = IFR_top_2LL_param_df,
+           aes(x = b_a, y = IFR_from_param)) +
+  geom_point() + rahul_man_figure_theme
+p
+
+p = ggplot(data = IFR_top_2LL_param_df,
+           aes(x = R_0, y = IFR_from_param)) +
+  geom_point() + rahul_man_figure_theme
+p
+
+IFR_top_2LL_param_df_no_R_0_outlier = IFR_top_2LL_param_df %>%
+  filter(R_0 < 15)
+
+p = ggplot(data = IFR_top_2LL_param_df_no_R_0_outlier,
+           aes(x = R_0, y = IFR_from_param)) +
+  geom_point() + rahul_man_figure_theme
+p
+
+p = ggplot(data = IFR_top_2LL_param_df,
+           aes(x = R_0_NGM, y = IFR_from_param)) +
+  geom_point() + rahul_man_figure_theme
+p
+
+p = ggplot(data = IFR_top_2LL_param_df,
+           aes(x = p_S, y = IFR_from_param)) +
+  geom_point() + rahul_man_figure_theme +
+  theme_white_background
+p
+pdf("../Figures/Profiles/N_12_Model/Man_Figs_Revision/IFR_all_cases_vs_p_S.pdf")
+print(p)
+dev.off()
+
+p = ggplot(data = IFR_top_2LL_param_df,
+           aes(x = p_H_cond_S, y = IFR_from_param)) +
+  geom_point() + rahul_man_figure_theme
+p
+
+```
+
+
+
+```{r}
+p = ggplot(data = obs_cases_and_deaths_data,aes(x = times,
+                                     y = IFR_Obs)) +
+  geom_point() +
+  geom_hline(yintercept = IFR_min_param_est, color = "blue") +
+  geom_hline(yintercept = IFR_max_param_est, color = "blue") 
+p
+
+NYC_obs_IFR = obs_cases_and_deaths_data$IFR_Obs[nrow(obs_cases_and_deaths_data)]
+NYC_obs_IFR
+```
+
+
+```{r}
+IFR_hist_df = IFR_top_2LL_param_df %>%
+  pivot_longer(cols = c("IFR_all_cases", "IFR_symp_cases"),
+               values_to = "IFR", names_to = "IFR_Denom")
+p = ggplot(data = IFR_hist_df,
+           aes(x = IFR,
+               fill = IFR_Denom)) +
+  geom_histogram() + geom_vline(xintercept = NYC_obs_IFR, color = 'blue') +
+  geom_vline(xintercept = nyc_hosp_death_ratio, color = "red") +
+  rahul_man_figure_theme + theme_white_background
+p
+
+p = ggplot(data = IFR_hist_df,
+           aes(x = IFR,
+               fill = IFR_Denom)) +
+  geom_histogram() + geom_vline(xintercept = NYC_obs_IFR, color = 'blue') +
+  rahul_man_figure_theme + theme_white_background
+p
+
+p = ggplot(data = IFR_hist_df,
+           aes(x = IFR,
+               fill = IFR_Denom)) +
+  geom_histogram() + geom_vline(xintercept = NYC_obs_IFR, color = 'orange') +
+  rahul_man_figure_theme + theme_white_background +
+  theme(legend.position = "None")
+p
+pdf("../Figures/Profiles/N_12_Model/Man_Figs_Revision/IFR_histogram_all_cases_symp_cases_and_NYC_obs.pdf")
+print(p)
+dev.off()
+
+
+p = ggplot(data = IFR_hist_df,
+           aes(x = IFR,
+               fill = IFR_Denom)) +
+  geom_histogram() + geom_vline(xintercept = NYC_obs_IFR, color = 'orange') +
+  geom_vline(xintercept = nyc_hosp_death_ratio, color = "violet") +
+  rahul_man_figure_theme + theme_white_background +
+  theme(legend.position = "false")
+p
+
+pdf("../Figures/Profiles/N_12_Model/Man_Figs_Revision/IFR_histogram_all_cases_symp_cases_and_NYC_obs_with_NYC_hosp_death_ratio.pdf")
+print(p)
+dev.off()
+
+```
+
+
+```{r}
+### Define start date
+true_start_date = as.Date("2020-03-01")
+t0 = 0
+start_of_year = as.Date("2020-01-01")
+first_saturday_in_year = as.Date("2020-01-04")
+
+## Compartment/Queue Cohort Numbers
+M = 5
+V = 13
+K = 14
+
+
+#Declare Csnippets and data
+source("Csnippet_nyc_coronavirus_model_N_12.R")
+
+## Load NYC covariate data
+covariate_df = read.csv(file =
+                          paste0("../Generated_Data/covariate_data_",
+                                 model_name, ".csv"))
+
+
+
+### Create covariate table
+covar=covariate_table(
+  time=covariate_df$times,
+  L_advanced_2_days=covariate_df$L_advanced_2_days,
+  F_w_y = covariate_df$F_w_y,
+  L_orig = covariate_df$L_orig,
+  w = covariate_df$Week,
+  y = covariate_df$Year,
+  times="time"
+)
+```
+
+# Simulate from big b_a param combination
+```{r}
+big_b_a_MLE = read.csv("../Generated_Data/Profiles/N_12_Model/top_2_LL_data/Man_Table_data/b_a_profile_top_2_LL_via_case_and_antibody_LL_big_b_a_parameter_combination_for_simulation.csv")
+big_b_a_MLE
+big_b_a_MLE_comb =   big_b_a_MLE %>%
+  dplyr::select(-msg, -iter_num, -param_index,
+                -loglik, -nfail, -trace_num, -loglist.se,
+                -Antibody_Mean_LL, -Antibody_LL_SE,
+                -Median_Herd_Immunity, -combo_num,
+                -sim_subset_index, -duration_of_symp_1,
+                -duration_of_symp_2, -duration_of_symp,
+                -gamma_total, -Beta,
+                -R_0_P, -R_0_A, -R_0_S_1, -R_0_S_2,
+                -R_0_NGM)
+
+```
+
+
+```{r}
+##Simulation from ML
+sim_data_big_b_a = simulate(nsim = 101,
+                    seed = 12345,
+                    times = Observed_data$times,
+                    t0 = t0,
+                    rprocess = pomp::euler(rproc,delta.t = 1),
+                    params = big_b_a_MLE_comb,
+                    paramnames = paramnames,
+                    statenames = statenames,
+                    obsnames = obsnames,
+                    accumvars = acumvarnames,
+                    rinit = init,
+                    rmeas = rmeas,
+                    partrans = par_trans,
+                    covar = covar,
+                    format = "data.frame")
+#head(sim_data)
+
+sim_data_big_b_a_traj_data = sim_data_big_b_a %>%
+  dplyr::select(time, .id, R_A, R_F, R_H) %>%
+  mutate(R_total = R_A + R_F + R_H)
+sim_data_big_b_a_traj_data
+
+p = ggplot(data = sim_data_big_b_a_traj_data,
+           aes(x = time,
+               y = R_total,
+               color = .id)) +
+  geom_point() + geom_line(aes(group = .id)) +
+  geom_point(data = Observed_data,
+                              aes(x = times, y = Y), color = 'red') +
+  geom_line(data = Observed_data,
+                              aes(x = times, y = Y), color = 'red') +
+  rahul_man_figure_theme +
+  theme(legend.position = "None")
+p
+
+
+```
+```
+
